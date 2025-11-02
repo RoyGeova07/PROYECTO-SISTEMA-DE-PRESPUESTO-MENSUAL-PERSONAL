@@ -1,0 +1,8 @@
+*.sql linguist-language=SQL
+*.sql linguist-detectable=true
+
+*.hsql linguist-language=SQL
+
+/build/**        linguist-generated=true
+/dist/**         linguist-generated=true
+/nbproject/**    linguist-vendored=true
