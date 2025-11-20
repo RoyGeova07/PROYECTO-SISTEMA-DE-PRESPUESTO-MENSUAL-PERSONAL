@@ -235,4 +235,9 @@ Caso A: el año de fin es mayor que el de inicio
 Caso B: si el año de fin es igual, entonces el mes de fin >= mes de inicio
 Esto quiere decir que el final debe estar despues o igual que el inicio dentro del mismo año.
 */
-alter table PRESUPUESTOadd constraint ck_presu_vigenciacheck((Anio_de_fin>Anio_de_inicio)or(Anio_de_fin=Anio_de_inicio and Mes_de_fin>=Mes_de_inicio));
+alter table PRESUPUESTO
+    add constraint ck_presu_vigencia
+        check (
+            (Anio_de_fin > Anio_de_inicio)
+            or (Anio_de_fin = Anio_de_inicio and Mes_de_fin >= Mes_de_inicio)
+        );

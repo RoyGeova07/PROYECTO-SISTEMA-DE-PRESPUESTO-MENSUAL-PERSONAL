@@ -33,13 +33,4 @@
     FOR EACH ROW: que dispare por cada fila afectada, no una sola vez por sentencia.
 
 */
-
-/* TRIGGER #1: marca de tiempo al modificar USUARIOS */
-create trigger usuario_modificado_en
-before update on USUARIOS
-referencing new row as N
-for each row 
-begin atomic 
---aqui sella la fecha/hora de ultima modificacion
-    set N.modificado_en=current_timestamp
-end;
+--aqui trigger de subcategoria

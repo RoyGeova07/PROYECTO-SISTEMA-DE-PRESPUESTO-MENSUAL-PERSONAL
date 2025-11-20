@@ -21,47 +21,80 @@ al actualizar se setea modificado_por
 
 */
 
-alter table USUARIOS add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+--usuarios
+alter table USUARIOS add column if not exists creado_en timestamp default current_timestamp;
 
-alter table PRESUPUESTO add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table USUARIOS add column if not exists modificado_en timestamp;
 
-alter table CATEGORIA add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table USUARIOS add column if not exists creado_por varchar(100)default 'system';
 
-alter table SUBCATEGORIA add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table USUARIOS add column if not exists modificado_por varchar(100);
 
-alter table PRESUPUESTO_DETALLE add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
 
-alter table OBLIGACION_FIJA add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+--Presupuesto
+alter table PRESUPUESTO add column if not exists creado_en timestamp default current_timestamp;
 
-alter table META_AHORRO add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table PRESUPUESTO add column if not exists modificado_en timestamp;
 
-alter table TRANSACCION add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table PRESUPUESTO add column if not exists creado_por varchar(100) default 'system';
 
-alter table ALERTA add column if not exists creado_en timestamp default current_timestamp,
-add column if not exists modificado_en timestamp,
-add column if not exists creado_por varchar(100) default 'system',
-add column if not exists modificado_por varchar(100);
+alter table PRESUPUESTO add column if not exists modificado_por varchar(100);
+
+
+--Categoria
+alter table CATEGORIA add column if not exists creado_en timestamp default current_timestamp;
+
+alter table CATEGORIA add column if not exists modificado_en timestamp;
+
+alter table CATEGORIA add column if not exists creado_por varchar(100) default 'system'; 
+
+alter table CATEGORIA add column if not exists modificado_por varchar(100);
+
+--subcategoria
+alter table SUBCATEGORIA add column if not exists creado_en timestamp default current_timestamp;
+
+alter table SUBCATEGORIA add column if not exists modificado_en timestamp;
+
+alter table SUBCATEGORIA add column if not exists creado_por varchar(100) default 'system';
+
+alter table SUBCATEGORIA add column if not exists modificado_por varchar(100);
+
+
+--Presupuesto_detalle
+alter table PRESUPUESTO_DETALLE add column if not exists creado_en timestamp default current_timestamp;
+
+alter table PRESUPUESTO_DETALLE add column if not exists modificado_en timestamp;
+
+alter table PRESUPUESTO_DETALLE add column if not exists creado_por varchar(100) default 'system';
+
+alter table PRESUPUESTO_DETALLE  add column if not exists modificado_por varchar(100);
+
+
+--OBLIGACION_FIJA
+alter table OBLIGACION_FIJA add column if not exists creado_en timestamp default current_timestamp;
+
+alter table OBLIGACION_FIJA add column if not exists modificado_en timestamp;
+
+alter table OBLIGACION_FIJA add column if not exists creado_por varchar(100) default 'system';
+
+alter table OBLIGACION_FIJA add column if not exists modificado_por varchar(100);
+
+
+--META_AHORRO
+alter table META_AHORRO add column if not exists creado_en timestamp default current_timestamp;
+
+alter table META_AHORRO add column if not exists modificado_en timestamp;
+
+alter table META_AHORRO add column if not exists creado_por varchar(100) default 'system';
+
+alter table META_AHORRO add column if not exists modificado_por varchar(100);
+
+
+--transaccion
+alter table TRANSACCION add column if not exists creado_en timestamp default current_timestamp;
+
+alter table TRANSACCION add column if not exists modificado_en timestamp;
+
+alter table TRANSACCION add column if not exists creado_por varchar(100) default 'system';
+
+alter table TRANSACCION add column if not exists modificado_por varchar(100);

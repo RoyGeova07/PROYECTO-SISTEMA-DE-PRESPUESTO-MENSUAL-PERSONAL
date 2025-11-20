@@ -3,9 +3,12 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/SISTEMA%20DE%20PRESUPUESTO%20MENSUAL%20PERSONAL/src/database/Triggers.sql</file>
-            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/SISTEMA%20DE%20PRESUPUESTO%20MENSUAL%20PERSONAL/src/database/auditoria.sql</file>
-            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/SISTEMA%20DE%20PRESUPUESTO%20MENSUAL%20PERSONAL/src/database/Tablas.sql</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/database/procedimientos_usuarios.sql</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/database/Triggers.sql</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/backend/ConexionBD.java</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/database/auditoria.sql</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/database/Tablas.sql</file>
+            <file>file:/C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/src/backend/Usuario_Data.java</file>
         </group>
     </open-files>
 </project-private>
