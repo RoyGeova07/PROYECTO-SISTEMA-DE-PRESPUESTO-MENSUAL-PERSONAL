@@ -51,5 +51,3 @@ SET Estado_usuario=FALSE,
     modificado_en=CURRENT_TIMESTAMP,
     modificado_por='sp_eliminar_usuario'
 WHERE Id_usuario=p_id_usuario;
-
-
