@@ -1130,18 +1130,62 @@ public class Puente_Sql_Java
         Recalcula totales a partir de un id_detalle (llama al SP que obtiene el presupuesto desde la fila detalle).
     
     */
-    public void recalcularTotalesPorDetalle(long idDetalle)throws SQLException
-    {
-        String SQL="{ CALL SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE(?) }";
-        try(Connection conn=ConexionBD.getConnection(); CallableStatement cstmt=conn.prepareCall(SQL)) 
-        {
-            
+    public void recalcularTotalesPorDetalle(long idDetalle) throws SQLException {
+        String SQL = "{ CALL SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE(?) }";
+        try (Connection conn = ConexionBD.getConnection(); CallableStatement cstmt = conn.prepareCall(SQL)) {
+
             cstmt.setLong(1, idDetalle);
             cstmt.execute();
             System.out.println("SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE: OK");
-            
+
         }
     }
+
+    public List<LinkedHashMap<String, Object>> listarDetallesPresupuesto(long p_id_presupuesto) throws SQLException {
+        String SQL=""
+                +"SELECT pd.Id_presupuesto_detalle, pd.Id_presupuesto, pd.Id_subcategoria, pd.Monto_mensual, "
+                +"pd.Justificacion_del_monto, pd.creado_en, pd.modificado_en, "
+                +"s.Nombre_subcategoria, s.Descripcion_detallada AS Descripcion_subcategoria, "
+                +"c.Id_categoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
+                +"FROM PUBLIC.PRESUPUESTO_DETALLE pd "
+                +"JOIN PUBLIC.SUBCATEGORIA s ON pd.Id_subcategoria = s.Id_subcategoria "
+                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
+                +"WHERE pd.Id_presupuesto = ? "
+                +"ORDER BY pd.Id_presupuesto_detalle";
+
+        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
+
+        try(Connection con =ConexionBD.getConnection(); PreparedStatement ps= con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, p_id_presupuesto);
+
+            try(ResultSet rs = ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
+                    fila.put("id_presupuesto_detalle", rs.getLong("Id_presupuesto_detalle"));
+                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
+                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
+                    fila.put("monto_mensual", rs.getBigDecimal("Monto_mensual"));
+                    fila.put("justificacion", rs.getString("Justificacion_del_monto"));
+                    fila.put("creado_en", rs.getTimestamp("creado_en"));
+                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
+                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
+                    fila.put("descripcion_subcategoria", rs.getString("Descripcion_subcategoria"));
+                    fila.put("id_categoria", rs.getLong("Id_categoria"));
+                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
+                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
+                    lista.add(fila);
+                }
+            }
+        }
+
+        return lista;
+    }
+
+
     private static String interpretarSQLException(SQLException ex) {
         String sqlState = ex.getSQLState();
         int code = ex.getErrorCode();
@@ -1215,19 +1259,25 @@ public class Puente_Sql_Java
                 System.out.println(fila);
                 
             }
-            System.out.println("\n\n=====INSERTANDO PRESUPUESTO========");
-            dao.insertarPresupuesto(1L, "ERLING","MI PRESUPUESTO DEL MES", 2025,11,2025, 12, "ROYY");
             for(var fila:dao.listarPresupuestoPorUsuario(1L,"activo"))
             {
                 
                 System.out.println(fila);
                 
             }
-            
-            
-            
-            
-           
+            System.out.println("\n\n=====LISTA DE PRESUPUESTOS_DETALLE");
+            List<LinkedHashMap<String, Object>> detalles = dao.listarDetallesPresupuesto(1L); // usa el id_presupuesto correcto
+            if(detalles.isEmpty()) 
+            {
+                System.out.println("No se encontraron detalles para el presupuesto " + 1L);
+            } else {
+                for (var d : detalles) {
+                    System.out.println(d);
+                }
+            }
+
+
+
             //para guardar en disco
             dao.hacerCheckpoint();
             
