@@ -10,6 +10,7 @@
 drop procedure if exists SP_INSERTAR_PRESUPUESTO;
 drop procedure if exists SP_ACTUALIZAR_PRESUPUESTO;
 drop procedure if exists SP_ELIMINAR_PRESUPUESTO;
+drop procedure if exists SP_RECALCULA_TOTALES_PARA_PRESUPUESTO;
 
 
 create procedure SP_INSERTAR_PRESUPUESTO
@@ -98,3 +99,37 @@ create procedure SP_ELIMINAR_PRESUPUESTO
 modifies sql data
 delete from PRESUPUESTO
 where Id_presupuesto=P_ID_PRESUPUESTO;
+
+--con esto recalcula los 3 totales del presupuesto (ingresos,gastos,ahorros)
+create procedure SP_RECALCULA_TOTALES_PARA_PRESUPUESTO
+(
+
+    in P_ID_PRESUPUESTO bigint
+
+)
+modifies sql data
+update PRESUPUESTO
+set 
+    Total_de_ingresos=Coalesce(
+        (select sum(pd.Monto_mensual)
+        from PRESUPUESTO_DETALLE pd
+        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        join CATEGORIA c on s.Id_categoria=c.Id_categoria
+        where pd.Id_presupuesto=P_ID_PRESUPUESTO
+            and c.Tipo_de_categoria='ingreso'),0),
+    Total_de_gastos=Coalesce(
+        (select sum(pd.Monto_mensual)
+        from PRESUPUESTO_DETALLE pd 
+        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        join CATEGORIA c on s.Id_categoria=C.Id_categoria
+        where pd.Id_presupuesto=P_ID_PRESUPUESTO
+            and c.Tipo_de_categoria='gasto'),0),
+    Total_de_ahorro=Coalesce(
+        (select sum(pd.Monto_mensual)
+        from PRESUPUESTO_DETALLE pd
+        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        join CATEGORIA c on s.Id_categoria=C.Id_categoria
+        where pd.Id_presupuesto=P_ID_PRESUPUESTO
+            and c.Tipo_de_categoria='ahorro'),0)
+where Id_presupuesto=P_ID_PRESUPUESTO
+;

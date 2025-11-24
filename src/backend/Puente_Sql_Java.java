@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.CallableStatement;
 import java.util.List;
+import java.sql.*;
 
 /*
 
@@ -852,7 +853,312 @@ public class Puente_Sql_Java
 
         
     }
+    public LinkedHashMap<String,Object>consultarPresupuesto(long idPresupuesto)throws SQLException
+    {
+        
+        String SQL="SELECT Id_presupuesto, Id_usuario, Nombre_descriptivo, Anio_de_inicio, Mes_de_inicio, "+
+        "Anio_de_fin, Mes_de_fin, Total_de_ingresos, Total_de_gastos, Total_de_ahorro, "+
+        "Fecha_hora_creacion, Estado_presupuesto, creado_en, modificado_en, creado_por, modificado_por "+
+        "FROM PRESUPUESTO "+
+        "WHERE Id_presupuesto = ?";
+        
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
+        {
             
+            ps.setLong(1, idPresupuesto);
+            
+            try(ResultSet rs=ps.executeQuery())
+            {
+                
+                if(rs.next())
+                {
+                    
+                    LinkedHashMap<String,Object>fila=new LinkedHashMap<>();
+                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
+                    fila.put("id_usuario", rs.getLong("Id_usuario"));
+                    fila.put("nombre_descriptivo", rs.getString("Nombre_descriptivo"));
+                    fila.put("anio_de_inicio", rs.getInt("Anio_de_inicio"));
+                    fila.put("mes_de_inicio", rs.getInt("Mes_de_inicio"));
+                    fila.put("anio_de_fin", rs.getInt("Anio_de_fin"));
+                    fila.put("mes_de_fin", rs.getInt("Mes_de_fin"));
+                    fila.put("total_de_ingresos", rs.getBigDecimal("Total_de_ingresos"));
+                    fila.put("total_de_gastos", rs.getBigDecimal("Total_de_gastos"));
+                    fila.put("total_de_ahorro", rs.getBigDecimal("Total_de_ahorro"));
+                    fila.put("fecha_hora_creacion", rs.getTimestamp("Fecha_hora_creacion"));
+                    fila.put("estado_presupuesto", rs.getString("Estado_presupuesto"));
+                    fila.put("creado_en", rs.getTimestamp("creado_en"));
+                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
+                    fila.put("creado_por", rs.getString("creado_por"));
+                    fila.put("modificado_por", rs.getString("modificado_por"));
+                    return fila;
+                    
+                }else{
+                    
+                    return null;
+                    
+                }
+                
+            }
+            
+        }
+        
+    }
+    //listar presupuesto por usuario
+    public List<LinkedHashMap<String,Object>>listarPresupuestoPorUsuario(long idUsuario,String estado)throws SQLException
+    {
+        
+        StringBuilder sb=new StringBuilder();
+        sb.append("SELECT Id_presupuesto, Id_usuario, Nombre_descriptivo, Anio_de_inicio, Mes_de_inicio, ");
+        sb.append("Anio_de_fin, Mes_de_fin, Total_de_ingresos, Total_de_gastos, Total_de_ahorro, ");
+        sb.append("Fecha_hora_creacion, Estado_presupuesto, creado_en, modificado_en, creado_por, modificado_por ");
+        sb.append("FROM PRESUPUESTO ");
+        sb.append("WHERE Id_usuario =? ");
+        
+        if(estado!=null&&!estado.isBlank())
+        {
+            
+            sb.append("AND Estado_presupuesto=?");
+            
+        }
+        sb.append("ORDER BY Id_presupuesto");
+        
+        String SQL=sb.toString();
+        
+        List<LinkedHashMap<String,Object>>lista=new ArrayList<>();
+        
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
+        {
+            
+            ps.setLong(1, idUsuario);
+            if(estado!=null&&!estado.isBlank())
+            {
+                
+                ps.setString(2,estado);
+                
+            }
+            try(ResultSet rs=ps.executeQuery())
+            {
+                
+                while(rs.next())
+                {
+               
+                    LinkedHashMap<String, Object>fila=new LinkedHashMap<>();
+                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
+                    fila.put("id_usuario", rs.getLong("Id_usuario"));
+                    fila.put("nombre_descriptivo", rs.getString("Nombre_descriptivo"));
+                    fila.put("anio_de_inicio", rs.getInt("Anio_de_inicio"));
+                    fila.put("mes_de_inicio", rs.getInt("Mes_de_inicio"));
+                    fila.put("anio_de_fin", rs.getInt("Anio_de_fin"));
+                    fila.put("mes_de_fin", rs.getInt("Mes_de_fin"));
+                    fila.put("total_de_ingresos", rs.getBigDecimal("Total_de_ingresos"));
+                    fila.put("total_de_gastos", rs.getBigDecimal("Total_de_gastos"));
+                    fila.put("total_de_ahorro", rs.getBigDecimal("Total_de_ahorro"));
+                    fila.put("fecha_hora_creacion", rs.getTimestamp("Fecha_hora_creacion"));
+                    fila.put("estado_presupuesto", rs.getString("Estado_presupuesto"));
+                    fila.put("creado_en", rs.getTimestamp("creado_en"));
+                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
+                    fila.put("creado_por", rs.getString("creado_por"));
+                    fila.put("modificado_por", rs.getString("modificado_por"));
+                    
+                    lista.add(fila);
+                    
+                }
+                
+            }
+            
+        }
+        return lista;
+        
+    }
+    public void recalcularTotalesPresupuesto(long idPresupuesto)throws SQLException
+    {
+    
+        String SQL = "{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
+
+        try (Connection con = ConexionBD.getConnection(); CallableStatement cstmt = con.prepareCall(SQL)) {
+
+            cstmt.setLong(1, idPresupuesto);
+            cstmt.execute();
+            System.out.println("SP_RECALCULA_TOTALES_PARA_PRESUPUESTO: OK");
+        }
+
+    }
+    public  void insertarDetalleYRecalcular(long idPresupuesto, long idSubcategoria,BigDecimal montoMensual, String justificacion,String creadoPor) throws SQLException
+    {
+
+        String SQL_insertar = "{ CALL SP_INSERTAR_PRESUPUESTO_DETALLE(?,?,?,?,?) }";
+        String SQL_recalcular = "{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
+
+        try (Connection con = ConexionBD.getConnection(); CallableStatement cstmtIns = con.prepareCall(SQL_insertar); CallableStatement cstmtRecal = con.prepareCall(SQL_recalcular)) {
+
+            con.setAutoCommit(false);
+            try {
+                cstmtIns.setLong(1, idPresupuesto);
+                cstmtIns.setLong(2, idSubcategoria);
+                cstmtIns.setBigDecimal(3, montoMensual);
+                cstmtIns.setString(4, justificacion);
+                cstmtIns.setString(5, creadoPor);
+                cstmtIns.execute();
+
+                // CORRECCIÓN: usar cstmtRecal para preparar el recálculo
+                cstmtRecal.setLong(1, idPresupuesto);
+                cstmtRecal.execute();
+
+                con.commit();
+                System.out.println("Insertar detalle + recalcular: OK");
+
+            } catch (SQLException e) {
+                con.rollback();
+                String msg = interpretarSQLException(e);
+                throw new SQLException(msg, e);
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+    /*
+    
+        Actualiza un detalle y recalcula totales (transaccional).
+    
+    */
+    public  void actualizarDetalleYRecalcular(long idDetalle,BigDecimal nuevoMonto,String nuevaJustificacion,String modificadoPor)throws SQLException
+    {
+        
+        String callUpdate="{ CALL SP_ACTUALIZAR_PRESUPUESTO_DETALLE(?,?,?,?) }";
+        String selectPresu="SELECT Id_presupuesto FROM PRESUPUESTO_DETALLE WHERE Id_presupuesto_detalle = ?";
+        String callRecalc="{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
+        
+        try(Connection conn=ConexionBD.getConnection();PreparedStatement psGet = conn.prepareStatement(selectPresu);CallableStatement cstmtUpd=conn.prepareCall(callUpdate);CallableStatement cstmtRecalc=conn.prepareCall(callRecalc)) 
+        {
+            
+            conn.setAutoCommit(false);
+            try
+            {
+                
+                //obtener el idpresupuesto
+                psGet.setLong(1, idDetalle);
+                long idPresupuesto;
+                
+                try(ResultSet rs=psGet.executeQuery())
+                {
+                    
+                    if(!rs.next())throw new SQLException("Detalle no encontrado: "+idDetalle);
+                    idPresupuesto=rs.getLong(1);
+                    
+                }
+                  cstmtUpd.setLong(1, idDetalle);
+                cstmtUpd.setBigDecimal(2, nuevoMonto);
+                cstmtUpd.setString(3, nuevaJustificacion);
+                cstmtUpd.setString(4, modificadoPor);
+                cstmtUpd.execute();
+
+                cstmtRecalc.setLong(1, idPresupuesto);
+                cstmtRecalc.execute();
+                
+                conn.commit();
+                System.out.println("Update detalle + recalc: OK");
+
+                
+            }catch(SQLException e){
+                
+                conn.rollback();
+                throw e;
+                
+            }finally{
+                
+                conn.setAutoCommit(true);
+                
+            }
+            
+        }
+
+        
+    }
+    /*
+    
+        Elimina un detalle y recalcula totales (transaccional).
+    
+    */
+    public  void eliminarDetalleYRecalcular(long idDetalle) throws SQLException 
+    {
+        
+        String selectPresu="SELECT Id_presupuesto FROM PRESUPUESTO_DETALLE WHERE Id_presupuesto_detalle = ?";
+        String callDelete="{ CALL SP_ELIMINAR_PRESUPUESTO_DETALLE(?) }";
+        String callRecalc="{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
+
+        try(Connection conn=ConexionBD.getConnection(); PreparedStatement psGet=conn.prepareStatement(selectPresu); CallableStatement cstmtDel=conn.prepareCall(callDelete); CallableStatement cstmtRecalc=conn.prepareCall(callRecalc)) 
+        {
+
+            conn.setAutoCommit(false);
+            try 
+            {
+                psGet.setLong(1, idDetalle);
+                long idPresupuesto;
+                try(ResultSet rs=psGet.executeQuery()) 
+                {
+                    if(!rs.next()) 
+                    {
+                        
+                        throw new SQLException("Detalle no encontrado: "+idDetalle);
+                        
+                    }
+                    idPresupuesto =rs.getLong(1);
+                }
+
+                cstmtDel.setLong(1, idDetalle);
+                cstmtDel.execute();
+
+                cstmtRecalc.setLong(1, idPresupuesto);
+                cstmtRecalc.execute();
+
+                conn.commit();
+                System.out.println("Delete detalle + recalc: OK");
+            }catch(SQLException ex){
+                
+                conn.rollback();
+                throw ex;
+                
+            }finally{
+                
+                conn.setAutoCommit(true);
+                
+            }
+        }
+    }
+    /*
+    
+        Recalcula totales a partir de un id_detalle (llama al SP que obtiene el presupuesto desde la fila detalle).
+    
+    */
+    public void recalcularTotalesPorDetalle(long idDetalle)throws SQLException
+    {
+        String SQL="{ CALL SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE(?) }";
+        try(Connection conn=ConexionBD.getConnection(); CallableStatement cstmt=conn.prepareCall(SQL)) 
+        {
+            
+            cstmt.setLong(1, idDetalle);
+            cstmt.execute();
+            System.out.println("SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE: OK");
+            
+        }
+    }
+    private static String interpretarSQLException(SQLException ex) {
+        String sqlState = ex.getSQLState();
+        int code = ex.getErrorCode();
+        String mensaje = ex.getMessage();
+
+        // Mensajes heurísticos adaptables a HSQLDB
+        if (mensaje != null && mensaje.toLowerCase().contains("unique") || mensaje.toLowerCase().contains("duplicate")) {
+            return "Violación de restricción: ya existe un registro duplicado (clave única).";
+        }
+        if (mensaje != null && mensaje.toLowerCase().contains("referential") || mensaje.toLowerCase().contains("foreign key")) {
+            return "Violación de llave foránea: recurso relacionado no existe (FK). Verificar Id_presupuesto o Id_subcategoria.";
+        }
+        // Mensaje por defecto
+        return "Error SQL (código " + code + ", sqlstate " + sqlState + "): " + mensaje;
+    }
+
+
     
 //por si acaso
     public void cerrarBaseDeDatos() throws SQLException
@@ -871,21 +1177,23 @@ public class Puente_Sql_Java
         {
             
             st.execute("CHECKPOINT");
-            System.out.println("CHECKPOINT ejecutado (cambios guardados en disco).");
+            System.out.println("\nCHECKPOINT ejecutado (cambios guardados en disco).");
             
         }
     }
     
     
 //PRUEBAZZZZZ AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII=========================================================
-    public static void main(String[] args) 
+  public static void main(String[] args) 
     {
         Puente_Sql_Java dao=new Puente_Sql_Java();
 
         try 
         {
+            dao.cerrarBaseDeDatos();
             
-            System.out.println("==========USUARIOS ACTUALES==========");
+//            
+            System.out.println("\n==========USUARIOS ACTUALES==========");
             for(var fila:dao.listarUsuarios())
             {
                 
@@ -893,81 +1201,36 @@ public class Puente_Sql_Java
                 
             }
             
-            //la mera pj
-            long ELMEROMERO=1L;
-            
-            System.out.println("\n==========PRUEBA 1: insertar presupuesto valido ==========");
-            try
+            System.out.println("\n\n=====MOSTRANDO CATEGORIAS============");
+            for(var fila:dao.listarCategorias(1L,"gasto"))
             {
                 
-                dao.insertarPresupuesto(ELMEROMERO,"Presupuesto Nov-Dic 2025","Presupuesto de prueba 1",2025,11,2025,12,"AYO");
-                System.out.println("PRESUPUESTO CREADO CORRECTAMENTE (NOV-DIC 2025)");
+                System.out.println(fila);
                 
-            }catch(SQLException messi){
+            }
+            System.out.println("\n\n=====MOSTRANDO SUBCATEGORIAS============");
+            for(var fila:dao.listarSubcategoriasPorCategoria(1L))
+            {
                 
-                System.out.println("ERROR POR QUE = "+messi.getMessage());
+                System.out.println(fila);
+                
+            }
+            System.out.println("\n\n=====INSERTANDO PRESUPUESTO========");
+            dao.insertarPresupuesto(1L, "ERLING","MI PRESUPUESTO DEL MES", 2025,11,2025, 12, "ROYY");
+            for(var fila:dao.listarPresupuestoPorUsuario(1L,"activo"))
+            {
+                
+                System.out.println(fila);
                 
             }
             
             
-            //AQUI PRUEBA DE ERROR
-            System.out.println("\n\n==========PRUEBA 2: Intentar crear presupuesto que se solapa, (tiene que fallas por AMOR DE DIOSSSS");
-            try
-            {
-                
-                //este solapa con 2025-11 .. 2025-12 -> debe lanzar validacion
-                dao.insertarPresupuesto(ELMEROMERO,"Presupuesto solapado 2025","INTENTO SOLAPADO",2025,12,2026,02,"AYO?");
-                System.out.println("ERROR: SE CREO UN PRESUPUESTO SOLAPADOOOOOOOOOOOO");
-                
-              
-                
-            }catch(SQLException elvin){
-                
-                System.out.println("VALIDACION OK - NO SE PUDO CREAR PRESUPUESTO SOLAPADO: "+elvin.getMessage());
-                
-            }
-           System.out.println("\n=== PRUEBA 3: Insertar PRESUPUESTO no solapado ===");
-            try 
-            {
-                
-                dao.insertarPresupuesto(ELMEROMERO,"Presupuesto 2026","Presupuesto anual 2026",2026,1,2026,12,"app_demo");
-                System.out.println("Presupuesto 2026 creado correctamente.");
-                
-            }catch(SQLException ex){
-                
-                System.out.println("Error al crear presupuesto 2026: " + ex.getMessage());
-                
-            }
-
-            System.out.println("\n=== LISTAR PRESUPUESTOS DEL USUARIO ID = "+ELMEROMERO+" ===");
             
-            String sqlList="SELECT Id_presupuesto, Id_usuario, Nombre_descriptivo, Anio_de_inicio, Mes_de_inicio, Anio_de_fin, Mes_de_fin, Estado_presupuesto, creado_en, creado_por FROM PRESUPUESTO WHERE Id_usuario = ? ORDER BY Id_presupuesto";
-            try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(sqlList)) 
-            {
-                ps.setLong(1, ELMEROMERO);
-                try(ResultSet rs=ps.executeQuery()) 
-                {
-                    while(rs.next()) 
-                    {
-                        System.out.printf("Id=%d | Nombre=%s | Periodo=%d-%02d -> %d-%02d | Estado=%s | creado_por=%s | creado_en=%s%n",
-                                rs.getLong("Id_presupuesto"),
-                                rs.getString("Nombre_descriptivo"),
-                                rs.getInt("Anio_de_inicio"),
-                                rs.getInt("Mes_de_inicio"),
-                                rs.getInt("Anio_de_fin"),
-                                rs.getInt("Mes_de_fin"),
-                                rs.getString("Estado_presupuesto"),
-                                rs.getString("creado_por"),
-                                rs.getTimestamp("creado_en")
-                        );
-                    }
-                }
-            }
-                
-
+            
+           
             //para guardar en disco
             dao.hacerCheckpoint();
-            dao.cerrarBaseDeDatos();
+            
 
         } catch (SQLException e) {
 
