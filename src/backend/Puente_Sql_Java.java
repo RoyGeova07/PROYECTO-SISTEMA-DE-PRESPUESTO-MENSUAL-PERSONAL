@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.CallableStatement;
 import java.util.List;
 import java.sql.*;
+import java.time.LocalDate;
 
 /*
 
@@ -1237,6 +1238,263 @@ public class Puente_Sql_Java
             }
         }
     }
+    // Insertar obligación fija
+
+    public void insertarObligacion(long idUsuario,long idSubcategoria,String nombre,String descripcion,BigDecimal monto,int diaVencimiento,java.sql.Date fechaInicio,java.sql.Date fechaFin,String creadoPor) throws SQLException 
+    {
+
+        String SQL="{ CALL PUBLIC.SP_INSERTAR_OBLIGACION(?,?,?,?,?,?,?,?,?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idUsuario);
+            cs.setLong(2, idSubcategoria);
+            cs.setString(3, nombre);
+            cs.setString(4, descripcion);
+            cs.setBigDecimal(5, monto);
+            cs.setInt(6, diaVencimiento);
+            cs.setDate(7, fechaInicio);
+            if(fechaFin!=null) 
+            {
+                cs.setDate(8, fechaFin);
+                
+            }else{
+                
+                cs.setNull(8, java.sql.Types.DATE);
+                
+            }
+            
+            cs.setString(9, creadoPor);
+
+            cs.execute();
+        }
+    }
+
+    public void actualizarObligacion(long idObligacion,String nombre,String descripcion,BigDecimal monto,int diaVencimiento,java.sql.Date fechaFin,boolean activo,String modificadoPor) throws SQLException
+    {
+
+        String SQL="{ CALL PUBLIC.SP_ACTUALIZAR_OBLIGACION(?,?,?,?,?,?,?,?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idObligacion);
+            cs.setString(2, nombre);
+            cs.setString(3, descripcion);
+            cs.setBigDecimal(4, monto);
+            cs.setInt(5, diaVencimiento);
+            if(fechaFin!=null) 
+            {
+                
+                cs.setDate(6, fechaFin);
+                
+            }else{
+                
+                cs.setNull(6, java.sql.Types.DATE);
+                
+            }
+            cs.setBoolean(7, activo);
+            cs.setString(8, modificadoPor);
+
+            cs.executeUpdate();
+        }
+    }
+
+    public void eliminarObligacion(long idObligacion) throws SQLException 
+    {
+        String SQL="{ CALL PUBLIC.SP_ELIMINAR_OBLIGACION(?) }";
+        try(Connection con =ConexionBD.getConnection(); CallableStatement cs =con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idObligacion);
+            cs.executeUpdate();
+
+        }
+    }
+
+    public List<LinkedHashMap<String, Object>> listarObligacionesPorUsuario(long idUsuario) throws SQLException {
+
+        String SQL="SELECT o.Id_obligacion_fija, o.Id_usuario, o.Id_subcategoria, o.Nombre, o.Descripcion_detallada, "
+                +"o.Monto_fijo_mensual, o.Dia_del_mes_de_vencimiento, o.Esta_vigente, o.Fecha_inicio_de_la_obligacion, o.Fecha_de_finalizacion, "
+                +"s.Nombre_subcategoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
+                +"FROM PUBLIC.OBLIGACION_FIJA o "
+                +"JOIN PUBLIC.SUBCATEGORIA s ON o.Id_subcategoria = s.Id_subcategoria "
+                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
+                +"WHERE o.Id_usuario = ? "
+                +"ORDER BY o.Id_obligacion_fija";
+
+        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
+        try(Connection con = ConexionBD.getConnection(); PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
+            ps.setLong(1, idUsuario);
+            try(ResultSet rs =ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    LinkedHashMap<String, Object> fila =new LinkedHashMap<>();
+                    fila.put("id_obligacion", rs.getLong("Id_obligacion_fija"));
+                    fila.put("id_usuario", rs.getLong("Id_usuario"));
+                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
+                    fila.put("nombre", rs.getString("Nombre"));
+                    fila.put("descripcion", rs.getString("Descripcion_detallada"));
+                    fila.put("monto", rs.getBigDecimal("Monto_fijo_mensual"));
+                    fila.put("dia_vencimiento", rs.getInt("Dia_del_mes_de_vencimiento"));
+                    fila.put("esta_vigente", rs.getBoolean("Esta_vigente"));
+                    fila.put("fecha_inicio", rs.getDate("Fecha_inicio_de_la_obligacion"));
+                    fila.put("fecha_fin", rs.getDate("Fecha_de_finalizacion"));
+                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
+                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
+                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
+                    lista.add(fila);
+                }
+            }
+        }
+        return lista;
+    }
+
+    public LinkedHashMap<String, Object> consultarObligacion(long idObligacion) throws SQLException 
+    {
+        String SQL="SELECT o.*, s.Nombre_subcategoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
+                +"FROM PUBLIC.OBLIGACION_FIJA o "
+                +"JOIN PUBLIC.SUBCATEGORIA s ON o.Id_subcategoria=s.Id_subcategoria "
+                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria =c.Id_categoria "
+                +"WHERE o.Id_obligacion_fija =?";
+        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+            ps.setLong(1, idObligacion);
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                if(!rs.next()) 
+                {
+                    
+                    return null;
+                    
+                }
+                LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
+                fila.put("id_obligacion", rs.getLong("Id_obligacion_fija"));
+                fila.put("id_usuario", rs.getLong("Id_usuario"));
+                fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
+                fila.put("nombre", rs.getString("Nombre"));
+                fila.put("descripcion", rs.getString("Descripcion_detallada"));
+                fila.put("monto", rs.getBigDecimal("Monto_fijo_mensual"));
+                fila.put("dia_vencimiento", rs.getInt("Dia_del_mes_de_vencimiento"));
+                fila.put("esta_vigente", rs.getBoolean("Esta_vigente"));
+                fila.put("fecha_inicio", rs.getDate("Fecha_inicio_de_la_obligacion"));
+                fila.put("fecha_fin", rs.getDate("Fecha_de_finalizacion"));
+                fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
+                fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
+                fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
+                return fila;
+            }
+        }
+    }
+    // Inserta una transaccion usando SP_INSERTAR_TRANSACCION
+    //                                                                                                      nullable
+
+    public void insertarTransaccion(long idUsuario,long idPresupuesto,int anio,int mes,long idSubcategoria,Long idObligacion,String tipo,String descripcion, BigDecimal monto,java.sql.Date fecha,String metodoPago,String creadoPor) throws SQLException 
+    {
+
+        String SQL = "{ CALL PUBLIC.SP_INSERTAR_TRANSACCION(?,?,?,?,?,?,?,?,?,?,?,?) }"; // 12 placeholders
+        try (Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) {
+
+            cs.setLong(1, idUsuario);
+            cs.setLong(2, idPresupuesto);
+            cs.setInt(3, anio);
+            cs.setInt(4, mes);
+            cs.setLong(5, idSubcategoria);
+
+            if(idObligacion!=null) 
+            {
+                
+                cs.setLong(6, idObligacion);
+                
+            }else{
+                
+                cs.setNull(6, java.sql.Types.BIGINT);
+                
+            }
+
+            cs.setString(7, tipo);
+            cs.setString(8, descripcion);
+            cs.setBigDecimal(9, monto);
+            cs.setDate(10, fecha);
+            cs.setString(11, metodoPago);
+            cs.setString(12, creadoPor); 
+
+            cs.execute();
+            System.out.println("SP_INSERTAR_TRANSACCION: executed (verifica si se inserto).");
+        }
+    }
+
+
+    // Actualiza una transaccion (SP_ACTUALIZAR_TRANSACCION)
+    public void actualizarTransaccion(long idTransaccion,int anio,int mes,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String modificadoPor) throws SQLException 
+    {
+        String SQL="{ CALL PUBLIC.SP_ACTUALIZAR_TRANSACCION(?,?,?,?,?,?,?,?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idTransaccion);
+            cs.setInt(2, anio);
+            cs.setInt(3, mes);
+            cs.setString(4, descripcion);
+            cs.setBigDecimal(5, monto);
+            cs.setDate(6, fecha);
+            cs.setString(7, metodoPago);
+            cs.setString(8, modificadoPor);
+
+            int updated=cs.executeUpdate();
+            System.out.println("SP_ACTUALIZAR_TRANSACCION -> filas afectadas: " + updated);
+        }
+    }
+
+    // Elimina (borra) una transacción (SP_ELIMINAR_TRANSACCION)
+    public void eliminarTransaccion(long idTransaccion) throws SQLException 
+    {
+        String SQL="{ CALL PUBLIC.SP_ELIMINAR_TRANSACCION(?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idTransaccion);
+            int deleted=cs.executeUpdate();
+            System.out.println("SP_ELIMINAR_TRANSACCION -> filas afectadas: "+deleted);
+        }
+    }
+
+    // Lista transacciones por presupuesto (informacion básica)
+    public List<LinkedHashMap<String, Object>> listarTransaccionesPorPresupuesto(long idPresupuesto) throws SQLException 
+    {
+        String SQL="SELECT t.Id_transaccion, t.Id_usuario, t.Id_presupuesto, t.Anio, t.Mes, t.Id_subcategoria, "
+                +"t.Id_obligacion_fija, t.Tipo_de_transaccion, t.Descripcion, t.Monto, t.Fecha, t.Metodo_de_pago, t.Fecha_hora_de_registro "
+                +"FROM PUBLIC.TRANSACCION t WHERE t.Id_presupuesto = ? ORDER BY t.Id_transaccion";
+
+        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
+        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+            ps.setLong(1, idPresupuesto);
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
+                    fila.put("id_transaccion", rs.getLong("Id_transaccion"));
+                    fila.put("id_usuario", rs.getLong("Id_usuario"));
+                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
+                    fila.put("anio", rs.getInt("Anio"));
+                    fila.put("mes", rs.getInt("Mes"));
+                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
+                    fila.put("id_obligacion", rs.getObject("Id_obligacion_fija") != null ? rs.getLong("Id_obligacion_fija") : null);
+                    fila.put("tipo", rs.getString("Tipo_de_transaccion"));
+                    fila.put("descripcion", rs.getString("Descripcion"));
+                    fila.put("monto", rs.getBigDecimal("Monto"));
+                    fila.put("fecha", rs.getDate("Fecha"));
+                    fila.put("metodo_pago", rs.getString("Metodo_de_pago"));
+                    fila.put("fecha_hora_registro", rs.getTimestamp("Fecha_hora_de_registro"));
+                    lista.add(fila);
+                }
+            }
+        }
+        return lista;
+    }
 
 
 
@@ -1290,8 +1548,20 @@ public class Puente_Sql_Java
         {
             dao.cerrarBaseDeDatos();
             long idDetalle = 1L;
-            
-//            
+            long idUsuario = 1L;
+            long idSubcategoria = 1L;
+            long idPresupuesto = 1L;
+            int anio = 2025;
+            int mes = 11;
+            Long idObligacion = null; // sin obligación vinculada
+            String tipo = "gasto"; // debe coincidir con el tipo de la categoria padre
+            String descripcion = "Compra supermercado - prueba Java";
+            BigDecimal monto = new BigDecimal("1200.00");
+            LocalDate fechaLocal = LocalDate.of(2025, 11, 15);
+            java.sql.Date fecha = java.sql.Date.valueOf(fechaLocal);
+            String metodoPago = "efectivo";
+            String creadoPor = "ROYY";
+
             System.out.println("\n==========USUARIOS ACTUALES==========");
             for(var fila:dao.listarUsuarios())
             {
@@ -1321,10 +1591,10 @@ public class Puente_Sql_Java
                 
             }
             System.out.println("\n\n=====LISTA DE PRESUPUESTOS_DETALLE");
-            List<LinkedHashMap<String, Object>> detalles = dao.listarDetallesPresupuesto(1L); // usa el id_presupuesto correcto
+            List<LinkedHashMap<String, Object>> detalles=dao.listarDetallesPresupuesto(1L); // usa el id_presupuesto correcto
             if(detalles.isEmpty()) 
             {
-                System.out.println("No se encontraron detalles para el presupuesto " + 1L);
+                System.out.println("No se encontraron detalles para el presupuesto "+1L);
             }else{
                 
                 for(var d : detalles) 
@@ -1335,19 +1605,34 @@ public class Puente_Sql_Java
                 }
                 
             }
-            System.out.println("\n\n\nCONSULTA DE PRESUPUESTO_DETALLE");
-            LinkedHashMap<String, Object> detalle = dao.consultarPresupuestoDetalle(idDetalle);
-            if(detalle==null) 
+            
+            List<LinkedHashMap<String, Object>> lista=dao.listarObligacionesPorUsuario(idUsuario);
+            System.out.println("\n\n===== OBLIGACIONES DEL USUARIO "+ idUsuario+" =====");
+            for (var fila : lista) 
             {
                 
-                System.out.println("No existe detalle con id " + idDetalle);
+                System.out.println(fila);
+            }
+            
+            dao.insertarTransaccion(idUsuario, idPresupuesto, anio, mes, idSubcategoria, idObligacion,
+                    tipo, descripcion, monto, fecha, metodoPago, creadoPor);
+            
+            // --- 2) Listado de transacciones para el presupuesto ---
+            System.out.println("\n=== LISTANDO TRANSACCIONES PARA PRESUPUESTO " + idPresupuesto + " ===");
+            List<LinkedHashMap<String, Object>> list = dao.listarTransaccionesPorPresupuesto(idPresupuesto);
+            if(list.isEmpty()) 
+            {
+                
+                System.out.println("No hay transacciones. (Si no se insertó, revisa las validaciones del SP)");
                 
             }else{
-                
-                System.out.println("Detalle encontrado: " + detalle);
-                
+                for(var fila:list) 
+                {
+                    
+                    System.out.println(fila);
+                    
+                }
             }
-
 
 
 

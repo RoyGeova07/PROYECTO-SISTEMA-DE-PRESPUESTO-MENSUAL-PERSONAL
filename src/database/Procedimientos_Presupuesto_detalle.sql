@@ -98,22 +98,22 @@ set
     Total_de_ingresos=coalesce(
         (select sum(pd.Monto_mensual)
          from PRESUPUESTO_DETALLE pd
-         join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-         join CATEGORIA c on s.Id_categoria=c.Id_categoria
+            inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+            inner join CATEGORIA c on s.Id_categoria=c.Id_categoria
          where pd.Id_presupuesto=(select Id_presupuesto from PRESUPUESTO_DETALLE where Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE)
            and c.Tipo_de_categoria='ingreso'), 0),
     Total_de_gastos=coalesce(
         (select sum(pd.Monto_mensual)
          from PRESUPUESTO_DETALLE pd
-         join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-         join CATEGORIA c on s.Id_categoria=c.Id_categoria
+            inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+            inner join CATEGORIA c on s.Id_categoria=c.Id_categoria
          where pd.Id_presupuesto=(select Id_presupuesto from PRESUPUESTO_DETALLE where Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE)
            and c.Tipo_de_categoria='gasto'),0),
     Total_de_ahorro=coalesce(
         (select sum(pd.Monto_mensual)
          from PRESUPUESTO_DETALLE pd
-         join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-         join CATEGORIA c on s.Id_categoria=c.Id_categoria
+            inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+            inner join CATEGORIA c on s.Id_categoria=c.Id_categoria
          where pd.Id_presupuesto=(select Id_presupuesto from PRESUPUESTO_DETALLE where Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE)
            and c.Tipo_de_categoria='ahorro'),0)
 where Id_presupuesto=(select Id_presupuesto from PRESUPUESTO_DETALLE where Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE)
@@ -136,8 +136,8 @@ set
     Total_de_ingresos=Coalesce(
         (select sum(pd.Monto_mensual)
         from PRESUPUESTO_DETALLE pd
-        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-        join CATEGORIA c on s.Id_categoria=c.Id_categoria
+        inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        inner join CATEGORIA c on s.Id_categoria=c.Id_categoria
         where pd.Id_presupuesto=(
             select pd2.Id_presupuesto from PRESUPUESTO_DETALLE pd2 where pd2.Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE
         )
@@ -145,8 +145,8 @@ set
     Total_de_gastos=Coalesce(
         (select sum(pd.Monto_mensual)
         from PRESUPUESTO_DETALLE pd 
-        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-        join CATEGORIA c on s.Id_categoria=C.Id_categoria
+        inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        inner join CATEGORIA c on s.Id_categoria=C.Id_categoria
         where pd.Id_presupuesto=(
             select pd2.Id_presupuesto from PRESUPUESTO_DETALLE pd2 where pd2.Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE
         )
@@ -154,8 +154,8 @@ set
     Total_de_ahorro=Coalesce(
         (select sum(pd.Monto_mensual)
         from PRESUPUESTO_DETALLE pd
-        join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
-        join CATEGORIA c on s.Id_categoria=C.Id_categoria
+        inner join SUBCATEGORIA s on pd.Id_subcategoria=s.Id_subcategoria
+        inner join CATEGORIA c on s.Id_categoria=C.Id_categoria
         where pd.Id_presupuesto=(
             select pd2.Id_presupuesto from PRESUPUESTO_DETALLE pd2 where pd2.Id_presupuesto_detalle=P_ID_PRESUPUESTO_DETALLE
         )
