@@ -1184,6 +1184,60 @@ public class Puente_Sql_Java
 
         return lista;
     }
+    
+    public LinkedHashMap<String, Object> consultarPresupuestoDetalle(long p_id_detalle) throws SQLException 
+    {
+        String SQL=""
+                +"SELECT pd.Id_presupuesto_detalle, pd.Id_presupuesto, pd.Id_subcategoria, pd.Monto_mensual, "
+                +"pd.Justificacion_del_monto, pd.creado_en, pd.modificado_en, "
+                +"p.Nombre_descriptivo AS Nombre_presupuesto, "
+                +"s.Nombre_subcategoria, s.Descripcion_detallada AS Descripcion_subcategoria, "
+                +"c.Id_categoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
+                +"FROM PUBLIC.PRESUPUESTO_DETALLE pd "
+                +"JOIN PUBLIC.PRESUPUESTO p ON pd.Id_presupuesto = p.Id_presupuesto "
+                +"JOIN PUBLIC.SUBCATEGORIA s ON pd.Id_subcategoria = s.Id_subcategoria "
+                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
+                +"WHERE pd.Id_presupuesto_detalle = ?";
+
+        try(Connection con =ConexionBD.getConnection(); PreparedStatement ps =con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, p_id_detalle);
+
+            try(ResultSet rs =ps.executeQuery()) 
+            {
+                if(!rs.next()) 
+                {
+                    return null;
+                }
+
+                LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
+
+                fila.put("id_presupuesto_detalle", rs.getLong("Id_presupuesto_detalle"));
+                fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
+                fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
+                fila.put("monto_mensual", rs.getBigDecimal("Monto_mensual"));
+                fila.put("justificacion", rs.getString("Justificacion_del_monto"));
+                fila.put("creado_en", rs.getTimestamp("creado_en"));
+                fila.put("modificado_en", rs.getTimestamp("modificado_en"));
+
+                // Info del presupuesto
+                fila.put("nombre_presupuesto", rs.getString("Nombre_presupuesto"));
+
+                // Info de subcategoria
+                fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
+                fila.put("descripcion_subcategoria", rs.getString("Descripcion_subcategoria"));
+
+                // Info de categoria
+                fila.put("id_categoria", rs.getLong("Id_categoria"));
+                fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
+                fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
+
+                return fila;
+            }
+        }
+    }
+
 
 
     private static String interpretarSQLException(SQLException ex) {
@@ -1191,7 +1245,7 @@ public class Puente_Sql_Java
         int code = ex.getErrorCode();
         String mensaje = ex.getMessage();
 
-        // Mensajes heurísticos adaptables a HSQLDB
+        
         if (mensaje != null && mensaje.toLowerCase().contains("unique") || mensaje.toLowerCase().contains("duplicate")) {
             return "Violación de restricción: ya existe un registro duplicado (clave única).";
         }
@@ -1235,6 +1289,7 @@ public class Puente_Sql_Java
         try 
         {
             dao.cerrarBaseDeDatos();
+            long idDetalle = 1L;
             
 //            
             System.out.println("\n==========USUARIOS ACTUALES==========");
@@ -1270,11 +1325,29 @@ public class Puente_Sql_Java
             if(detalles.isEmpty()) 
             {
                 System.out.println("No se encontraron detalles para el presupuesto " + 1L);
-            } else {
-                for (var d : detalles) {
+            }else{
+                
+                for(var d : detalles) 
+                {
+                    
                     System.out.println(d);
+                    
                 }
+                
             }
+            System.out.println("\n\n\nCONSULTA DE PRESUPUESTO_DETALLE");
+            LinkedHashMap<String, Object> detalle = dao.consultarPresupuestoDetalle(idDetalle);
+            if(detalle==null) 
+            {
+                
+                System.out.println("No existe detalle con id " + idDetalle);
+                
+            }else{
+                
+                System.out.println("Detalle encontrado: " + detalle);
+                
+            }
+
 
 
 
