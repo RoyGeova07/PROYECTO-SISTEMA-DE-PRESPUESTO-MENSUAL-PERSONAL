@@ -1,38 +1,3 @@
-/* 
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Other/SQLTemplate.sql to edit this template
- */
-/**
- * Author:  royum
- * Created: 4 nov 2025
- */
-
-/*
-
-    triggers - auditoria de actualizacion (modifcado en)
-    
-    cada vez que se haga un 'update' a una fila,marcar automaticamente la fecha/hora de ultima modificacion
-    en "modificado_en" (la columna que se agrego en auditoria.sql)
-    Esto evita que el app tenga que acordarse de poner ese timestamp
-
-    sintaxis base de un trigger en HyperSQL
-    CREATE TRIGGER <nombre>
-    { BEFORE | AFTER } { INSERT | UPDATE | DELETE }
-    ON <tabla>
-    [REFERENCING OLD ROW AS O NEW ROW AS N]
-    FOR EACH ROW
-    BEGIN ATOMIC
-      -- cuerpo (una o varias sentencias SQL)
-    END;
-
-    BEFORE vs AFTER: usamos BEFORE UPDATE para poder asignar valores a la fila nueva (NEW)
-    antes de que se escriba en la tabla.
-
-    REFERENCING: nos da alias para la fila vieja (OLD) y la nueva (NEW). En HSQLDB es común usar N para NEW.
-
-    FOR EACH ROW: que dispare por cada fila afectada, no una sola vez por sentencia.
-
-*/
 --aqui trigger de subcategoria
 /*
 
@@ -66,27 +31,174 @@ Con FOR EACH ROW el trigger se ejecuta dos veces
 
 Cada ejecucion usara un N.Id_categoria distinto.
 
-
-
-----COMANDO PARA VERIFICAR QUE EXISTEN LOS TRIGGERS, YA QUE NETBEANS NO TIENE CARPETA PARA TRIGERS
+------------------------------------------------------------------------------------------------
+COMANDO PARA VERIFICAR QUE EXISTEN LOS TRIGGERS, YA QUE NETBEANS NO TIENE CARPETA PARA TRIGERS
 SELECT TRIGGER_NAME, EVENT_MANIPULATION, EVENT_OBJECT_TABLE
 FROM INFORMATION_SCHEMA.TRIGGERS
 WHERE TRIGGER_NAME = 'nombre_trigger';
+------------------------------------------------------------------------------------------------
 
 */
 drop trigger if exists TG_CATEGORIA_CREAR_SUBCATEGORIA_DEFECTO;
+DROP TRIGGER IF EXISTS TG_TRANS_INSERTAR_META;
+DROP TRIGGER IF EXISTS TG_TRANS_ACTUALIZAR_META;
+DROP TRIGGER IF EXISTS TG_TRANS_BORRAR_META;
 
+--PENDIENTE MODIFCAR ESATA FUNCION CON EL VALUES, SE HARA DE UN SOLO EN EL FRONTEND
 create trigger TG_CATEGORIA_CREAR_SUBCATEGORIA_DEFECTO
 after insert on CATEGORIA
 referencing new row as N
 for each row                                                            -- si en lugar de general quiero que la subcategoria se llame igual que la categoria, agrego N.Nombre
     insert into SUBCATEGORIA(Id_categoria,Nombre_subcategoria,Descripcion_detallada,Estado,Por_defecto)
-    values(N.Id_categoria,'Subcategoría por defecto de la categoria','General',true,true);
+    values(N.Id_categoria,'Subcategoría por defecto de la categoria',N.Nombre,true,true);
+
+
+
+
 
 
 -- INSERT INTO CATEGORIA (Nombre, Descripcion_detallada, Tipo_de_categoria)
 -- VALUES ('Prueba trigger', 'Gastos de prueba', 'gasto');
 -- 
 -- SELECT * FROM SUBCATEGORIA;
+
+
+-- ---------- TRIGGERS: mantener monto_ahorrado sincronizado ----------
+
+/*
+   al insertar una TRANSACCION tipo 'ahorro' sumamos el monto a la meta asociada (si existe).
+   al actualizar una TRANSACCION ajustamos diferencia (restamos old, sumamos new) si cambio monto/subcategoria/tipo.
+   al borrar una TRANSACCION restamos su monto de la meta asociada (si existe).
+  Nota: estas acciones asumen que una transaccion de 'ahorro' esta vinculada a la subcategoria que tiene meta.
+*/
+
+CREATE TRIGGER TG_TRANS_INSERTAR_META
+AFTER INSERT ON TRANSACCION
+REFERENCING NEW ROW AS N
+FOR EACH ROW 
+BEGIN ATOMIC 
+	IF lower(N.Tipo_de_transaccion)='ahorro'THEN
+		--sumar monto a meta si existe meta para esa subcategoria y estado en_progreso o pausada (sea criterio)
+		UPDATE META_AHORRO
+        SET Monto_ahorrado=Monto_ahorrado+N.Monto
+        WHERE Id_subcategoria=N.Id_subcategoria;
+	
+		--marcar completada si alcanza el objetivo
+		UPDATE META_AHORRO
+		SET Estado='Completada'
+		WHERE Id_subcategoria=N.Id_subcategoria
+          AND Monto_ahorrado>=Monto_total_alcanzar;
+    END IF;
+END;
+
+
+
+CREATE TRIGGER TG_TRANS_ACTUALIZAR_META
+AFTER UPDATE ON TRANSACCION
+REFERENCING OLD ROW AS O NEW ROW AS N
+FOR EACH ROW
+BEGIN ATOMIC
+    --si tipo o subcategoria o monto cambio, ajustar
+    IF Lower(O.Tipo_de_transaccion)='ahorro'THEN
+        --restar el monto viejo de su meta (si existe)
+        UPDATE META_AHORRO
+        SET Monto_ahorrado=Monto_ahorrado-O.Monto
+        WHERE Id_subcategoria=O.Id_subcategoria;
+    END IF;
+
+    IF lower(N.Tipo_de_transaccion)='ahorro'THEN
+        -- sumar el monto nuevo a la meta (si existe)
+        UPDATE META_AHORRO
+        SET Monto_ahorrado=Monto_ahorrado+N.Monto
+        WHERE Id_subcategoria=N.Id_subcategoria;
+    END IF;
+
+    --actualizar estados: completar donde corresponda
+    UPDATE META_AHORRO
+    SET Estado='completada'
+    WHERE Monto_ahorrado>=Monto_total_alcanzar;
+
+    --opcional: si una meta quedo con monto_ahorrado < monto_total y estaba completada, devolver a en_progreso
+    UPDATE META_AHORRO
+    SET Estado='en_progreso'
+    WHERE Estado='completada' AND Monto_ahorrado<Monto_total_alcanzar;
+END;
+
+
+--AFTER DELETE ON TRANSACCION
+CREATE TRIGGER TG_TRANS_BORRAR_META
+AFTER DELETE ON TRANSACCION
+REFERENCING OLD ROW AS O
+FOR EACH ROW
+BEGIN ATOMIC
+    IF lower(O.Tipo_de_transaccion)='ahorro'THEN
+        --restar monto antiguo de la meta si existe
+        UPDATE META_AHORRO
+        SET Monto_ahorrado=Monto_ahorrado-O.Monto
+        WHERE Id_subcategoria=O.Id_subcategoria;
+
+        --si se resto por debajo del objetivo, ajustar estado
+        UPDATE META_AHORRO
+        SET Estado='en_progreso'
+        WHERE Monto_ahorrado<Monto_total_alcanzar;
+    END IF;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

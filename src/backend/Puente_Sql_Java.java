@@ -1,18 +1,10 @@
 package backend;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashMap;
-import java.sql.SQLException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.CallableStatement;
-import java.util.List;
+
 import java.sql.*;
-import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.math.BigDecimal;
 
 /*
 
@@ -30,119 +22,136 @@ al igual que ResultSet lo utilizo para manejar los resultados de una consulta de
 public class Puente_Sql_Java 
 {
 
-        
-    public void insertarUsuario(String nombre,String apellido,String email,BigDecimal salarioMensual,String creadoPor)throws SQLException 
+    public void Insertar_usuario(String nombre,String apellido,String correo,BigDecimal salario,String creadoPor)throws SQLException
     {
-
-        //Sentencia para llamar al procedimiento en HSQLDB
-        String sql="CALL PUBLIC.SP_INSERTAR_USUARIO(?, ?, ?, ?, ?)";
-
-
-        //try-with-resources cierra conexion y statement automáticamente
-        try(Connection cn =ConexionBD.getConnection();CallableStatement cs =cn.prepareCall(sql)) 
+        
+        String SQL="{ CALL sp_insertar_usuario(?,?,?,?,?)}";
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
-
+            
             cs.setString(1, nombre);
             cs.setString(2, apellido);
-            cs.setString(3, email);
-            cs.setBigDecimal(4, salarioMensual);
+            cs.setString(3, correo);
+            cs.setBigDecimal(4, salario);
             cs.setString(5, creadoPor);
-
-            cs.execute();  // ejecuta el procedimiento
+            
+            cs.execute();
+            
         }
+        
     }
-    
-    public void ActualizarUsuario(long idUsuario,String nombre,String apellido,BigDecimal salarioMensual,String modificadoPor)throws SQLException
+    public void Actualizar_usuario(long idUsuario,String nombre,String apellido,BigDecimal salario,String modificadoPor)throws SQLException
     {
         
-        String SQL="CALL PUBLIC.SP_ACTUALIZAR_USUARIO(?,?,?,?,?)";
+        String SQL="{ CALL sp_actualizar_usuario(?,?,?,?,?)}";
         
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL))
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
-            cs.setLong(1,idUsuario);
-            cs.setString(2,nombre);
-            cs.setString(3,apellido);
-            cs.setBigDecimal(4,salarioMensual);
-            cs.setString(5,modificadoPor);
+            cs.setLong(1, idUsuario);
+            cs.setString(2, nombre);
+            cs.setString(3, apellido);
+            cs.setBigDecimal(4, salario);
+            cs.setString(5, modificadoPor);
             
             cs.executeUpdate();
             
         }
         
     }
-    public void EliminarUsuario(long idUsuario)throws SQLException
+    public boolean Eliminar_usuario(long idUsuario)throws SQLException
     {
         
-        String SQL="CALL PUBLIC.SP_ELIMINAR_USUARIO(?)";
+        String SQL="{ CALL sp_eliminar_usuario(?) }";
         
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL))
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
-            cs.setLong(1,idUsuario);
-            cs.executeUpdate();
+            cs.setLong(1, idUsuario);
+           
+            cs.execute();//el procedure hace el update internamente bro
+            
+            return true;//si no lanzo excepcion pijudo
+            
+        }catch(SQLException valio){
+            
+            throw valio;//valio
             
         }
         
     }
-    public List<LinkedHashMap<String,Object>>listarUsuarios()throws SQLException
+    public List<Usuario>ListarUsuarios()throws SQLException    
     {
         
-        String SQL="SELECT ID_USUARIO, NOMBRE_USUARIO, APELLIDO_USUARIO, "+"       CORREO_ELECTRONICO, FECHA_REGISTRO, ESTADO_USUARIO "+"FROM PUBLIC.USUARIOS";
+        List<Usuario>lista=new ArrayList<>();
+        String SQL="SELECT*FROM TABLE(PUBLIC.SP_LISTAR_USUARIOS())";//por a funcion de returns table
         
-        List<LinkedHashMap<String,Object>>lista=new ArrayList<>();
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL); ResultSet rs=ps.executeQuery())
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL);ResultSet rs=ps.executeQuery())
         {
             
             while(rs.next())
             {
                 
-                LinkedHashMap<String,Object>fila=new LinkedHashMap<>();
-                fila.put("id_usuario", rs.getLong("ID_USUARIO"));
-                fila.put("nombre_usuario", rs.getString("NOMBRE_USUARIO"));
-                fila.put("apellido_usuario", rs.getString("APELLIDO_USUARIO"));
-                fila.put("correo_electronico", rs.getString("CORREO_ELECTRONICO"));
-                fila.put("fecha_registro", rs.getTimestamp("FECHA_REGISTRO"));
-                fila.put("estado_usuario", rs.getBoolean("ESTADO_USUARIO"));
-                lista.add(fila);
+                Usuario u=MapearUsuario(rs);
+                lista.add(u);
                 
             }
             
         }
-        
         return lista;
+        
     }
-    
-    public LinkedHashMap<String,Object>ConsultarUsuario(long idUsuario)throws SQLException
+    private Usuario MapearUsuario(ResultSet rs)throws SQLException
     {
         
-        String SQL="SELECT ID_USUARIO, NOMBRE_USUARIO, APELLIDO_USUARIO, "+"       CORREO_ELECTRONICO, FECHA_REGISTRO, SALARIO_MENSUAL_BASE, "+"       ESTADO_USUARIO, CREADO_EN, MODIFICADO_EN, "+"       CREADO_POR, MODIFICADO_POR "+"FROM PUBLIC.USUARIOS "+"WHERE ID_USUARIO = ?";
+        Usuario u=new Usuario();
+        u.setId(rs.getLong("ID_USUARIO"));
+        u.setNombre(rs.getString("NOMBRE_USUARIO"));
+        u.setApellido(rs.getString("APELLIDO_USUARIO"));
+        u.setCorreo(rs.getString("CORREO_ELECTRONICO"));
+        u.setFechaRegistro(rs.getTimestamp("FECHA_REGISTRO"));
+        u.setSalario(rs.getBigDecimal("SALARIO_MENSUAL_BASE"));
         
-        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL))
+        boolean estado=true;
+        try
+        {
+            
+            estado=rs.getBoolean("ESTADO_USUARIO");
+            if(rs.wasNull())u.setEstado_usuario(null);
+            else u.setEstado_usuario(estado);
+            
+        }catch(SQLException valio){
+            
+            //la columna no existe, se deha en null
+            u.setEstado_usuario(null);
+            
+        }
+        
+        try{u.setCreadoEn(rs.getTimestamp("CREADO_EN"));}catch(SQLException e){}
+        try{u.setCreadoPor(rs.getString("CREADO_POR"));}catch(SQLException e){}
+        try{u.setModficadoEn(rs.getTimestamp("MODIFICADO_EN"));}catch(SQLException e){}
+        try{u.setModificadoPor(rs.getString("MODIFICADO_POR"));}catch(SQLException hitler){}
+
+        return u;
+        
+    }
+    public Usuario ConsultarUsuario(long idUsuario)throws SQLException
+    {
+        
+        String SQL="SELECT * FROM sp_consultar_usuario(?)";
+        
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
         {
             
             ps.setLong(1, idUsuario);
-            
             try(ResultSet rs=ps.executeQuery())
             {
                 
                 if(rs.next())
                 {
                     
-                    LinkedHashMap<String,Object>fila=new LinkedHashMap<>();
-                    fila.put("id_usuario",rs.getLong("ID_USUARIO"));
-                    fila.put("nombre_usuario",rs.getString("NOMBRE_USUARIO"));
-                    fila.put("apellido_usuario",rs.getString("APELLIDO_USUARIO"));
-                    fila.put("correo_electronico",rs.getString("CORREO_ELECTRONICO"));
-                    fila.put("fecha_registro",rs.getTimestamp("FECHA_REGISTRO"));
-                    fila.put("salario_mensual_base",rs.getBigDecimal("SALARIO_MENSUAL_BASE"));
-                    fila.put("estado_usuario",rs.getBoolean("ESTADO_USUARIO"));
-                    fila.put("creado_en",rs.getTimestamp("CREADO_EN"));
-                    fila.put("modificado_en",rs.getTimestamp("MODIFICADO_EN"));
-                    fila.put("creado_por",rs.getString("CREADO_POR"));
-                    fila.put("modificado_por",rs.getString("MODIFICADO_POR"));
-                    return fila;
+                    return MapearUsuario(rs);
                     
                 }else{
                     
@@ -155,213 +164,181 @@ public class Puente_Sql_Java
         }
         
     }
-    public long insertarUsuarioYObtenerId(String nombre,
-            String apellido,
-            String email,
-            BigDecimal salarioMensual,
-            String creadoPor) throws SQLException {
-        // 1) Insertar el usuario usando tu SP
-        insertarUsuario(nombre, apellido, email, salarioMensual, creadoPor);
-
-        // 2) Consultar el ID (Correo_electronico es UNIQUE)
-        String sqlId = "SELECT Id_usuario FROM PUBLIC.USUARIOS WHERE Correo_electronico = ?";
-
-        try (Connection cn = ConexionBD.getConnection(); PreparedStatement ps = cn.prepareStatement(sqlId)) {
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getLong("Id_usuario");
-                } else {
-                    throw new SQLException("No se pudo obtener el ID del usuario recien insertado.");
-                }
-            }
-        }
-    }
-    
-    public void InsertarCategoria(String nombre,String descripcion,String tipo,long idUsuario,String creadoPor)throws SQLException
+    public boolean ReactivarUsuario(long idUsuario,String modificadoPor)throws SQLException
     {
         
-        String SQL="CALL PUBLIC.SP_INSERTAR_CATEGORIA(?,?,?,?,?)";
+        String SQL="{ CALL sp_reactivar_usuario(?, ?) }";
         
-        try(Connection cn=ConexionBD.getConnection(); CallableStatement cs=cn.prepareCall(SQL)) 
+        System.out.println("DEBUG: Reactivando usuario con id = " + idUsuario + ", modificadoPor = " + modificadoPor);
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
+        {
+            
+            cs.setLong(1, idUsuario);
+            cs.setString(2, modificadoPor);
+            
+            cs.execute();
+            
+            return true;
+            
+        }catch(SQLException ex){
+            
+            if("45000".equals(ex.getSQLState())) 
+            {
+
+                System.err.println("ERROR BD controlado: SQLState=" + ex.getSQLState() + " Mensaje=" + ex.getMessage());
+                throw ex;
+            }
+            ex.printStackTrace();
+            throw ex;
+            
+        }
+        
+ 
+    }
+    public void InsertarCategoria(String nombre,String descripcion,String tipo,Long idUsuario,String creadoPor)throws SQLException
+    {
+        
+        String SQL="{ CALL SP_INSERTAR_CATEGORIA(?, ?, ?, ?, ?) }";
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
             cs.setString(1, nombre);
             cs.setString(2, descripcion);
-            cs.setString(3, tipo);
-            cs.setLong(4, idUsuario);
+            cs.setString(3, tipo==null?null:tipo);//por el lower
+            if(idUsuario==null)cs.setNull(4, Types.BIGINT);else cs.setLong(4, idUsuario);
             cs.setString(5, creadoPor);
-
-            cs.execute(); //ejecutarrrrrr 
+            
+            cs.execute();
             
         }
         
     }
-    
-    public void EliminarCategoria(long Id_categoria)throws SQLException
+    public void ActualizarCategoria(long idCategoria,String nombre,String descripcion,String modificadoPor)throws SQLException
     {
         
-        String SQL="SELECT COUNT(*) "+"FROM SUBCATEGORIA "+"WHERE Id_categoria = ? "+"  AND Estado = TRUE "+"  AND Por_defecto = FALSE";
-        
-        String SQL_BORRAR_SUBCA="DELETE FROM SUBCATEGORIA WHERE Id_categoria=?";
-        
-        String SQL_SP_BORRAR_CATE="CALL PUBLIC.SP_ELIMINAR_CATEGORIA(?)";
-        
-        Connection con=null;
-        
-        try
+        String SQL="{ CALL SP_ACTUALIZAR_CATEGORIA(?, ?, ?, ?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
-            //aqui se validan las subcategorias activas no por defecto
-            try(PreparedStatement ps=con.prepareStatement(SQL))
-            {
-                
-                ps.setLong(1, Id_categoria);
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    rs.next();
-                    int cantidad=rs.getInt(1);
-                    if(cantidad>0)
-                    {
-                        
-                        throw new SQLException("No se puede eliminar la categoria: tiene subcategorias activas adicionales.");
-                        
-                    }
-                    
-                }
-                
-            }
-            //aqui se borran todas las subcategorias, por defecto y las que queden
-            //try(PreparedStatement psDel=con.pre) por ahora no lo agrego porque falta agregar eliminar subcategoria
-            
-            //aqui se borra la categoria usando el sp
-            try(CallableStatement cs=con.prepareCall(SQL_SP_BORRAR_CATE))
-            {
-                
-                cs.setLong(1, Id_categoria);
-                cs.executeUpdate();
-                
-            }
-            //aqui se confirma todo
-            con.commit();//fin de transaccion
-            System.out.println("Categoria"+Id_categoria+" eliminada correctamente");
-            
-        }catch(SQLException eror_porque){
-            
-            if(con!=null)
-            {
-                
-                try
-                {
-                    
-                    con.rollback();
-                    
-                }catch(SQLException ignorar){}
-                
-            }
-            throw eror_porque;
-            
-        }finally{
-            
-            if(con!=null)
-            {
-                
-                try
-                {
-                    
-                    con.setAutoCommit(true);
-                    con.close();
-                    
-                }catch(SQLException sapo){}
-                
-            }
+            cs.setLong(1, idCategoria);
+            cs.setString(2, nombre);
+            cs.setString(3, descripcion);
+            cs.setString(4, modificadoPor);
+            cs.execute();
             
         }
         
     }
-    
-    public LinkedHashMap<String,Object>consultarCategoria(long idCategoria)throws SQLException 
+    public boolean EliminarCategoria(long idSubcategoria)throws SQLException
     {
         
-        String SQL="SELECT Id_categoria, Nombre, Descripcion_detallada, Tipo_de_categoria "+"FROM CATEGORIA "+"WHERE Id_categoria = ?";
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
+        String SQL="{ CALL SP_ELIMINAR_CATEGORIA(?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
-
-            ps.setLong(1, idCategoria);
-
-            try(ResultSet rs=ps.executeQuery()) 
+            
+            cs.setLong(1, idSubcategoria);
+            cs.execute();
+            return true;
+            
+        }catch(SQLException e){
+            
+            String sqlState=e.getSQLState();
+            
+            if("23503".equals(sqlState) || "23513".equals(sqlState) || "23000".equals(sqlState)) 
             {
-                if(rs.next()) 
-                {
-                    
-                    LinkedHashMap<String,Object> fila=new LinkedHashMap<>();
-                    fila.put("id_categoria", rs.getLong("Id_categoria"));
-                    fila.put("nombre", rs.getString("Nombre"));
-                    fila.put("descripcion_detallada", rs.getString("Descripcion_detallada"));
-                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                    return fila;
-                    
-                }
-                return null;//no existe foc
+                // Mensaje más amigable para presentar en UI
+                String userMessage = "No se puede eliminar la categoría porque está relacionada con subcategorías u otros registros.";
+                
+                throw new SQLException(userMessage, sqlState);
+
             }
+            
+            if("45000".equals(e.getSQLState()))
+            {
+                
+                throw e;
+                
+            }
+            throw e;
+            
         }
         
     }
-    
-    public List<LinkedHashMap<String,Object>>listarCategorias(long idUsuario, String tipo) throws SQLException 
+    public Categoria ConsultarCategoria(long idCategoria)throws SQLException
     {
         
-        String SQL= "SELECT c.Id_categoria, c.Nombre, c.Descripcion_detallada, c.Tipo_de_categoria "+"FROM CATEGORIA c ";
-        
-        //filtroo
-        if(tipo!=null&&!tipo.isBlank())
-        {
-            
-            SQL+= "WHERE c.Tipo_de_categoria = ? ";
-            
-        }
-        List<LinkedHashMap<String,Object>>lista=new ArrayList<>();
-        
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_CATEGORIA(?))";
         try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
         {
             
-            if(tipo!=null&&!tipo.isBlank())
+            ps.setLong(1, idCategoria);
+            try(ResultSet rs = ps.executeQuery()) 
             {
-                
-                ps.setString(1, tipo);
-                
-            }
-            try(ResultSet rs=ps.executeQuery())
-            {
-                
-                while(rs.next())
+                if(rs.next()) 
                 {
+                    return mapearCategoria(rs);
                     
-                LinkedHashMap<String,Object>fila=new LinkedHashMap<>();
-                fila.put("id_categoria", rs.getLong("Id_categoria"));
-                fila.put("nombre", rs.getString("Nombre"));
-                fila.put("descripcion_detallada", rs.getString("Descripcion_detallada"));
-                fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                lista.add(fila);
+                }else{
+                    
+                    return null; 
                     
                 }
-                
             }
             
+            
+        }catch(SQLException e){
+            
+            if("45000".equals(e.getSQLState())) 
+            {
+                
+                System.err.println("ERROR BD controlado (consultar categoria): "+e.getMessage());
+                throw e;
+            }
+            // Otro error inesperado
+            throw e;
+            
         }
-        return lista;
+       
         
+        
+    }
+    private Categoria mapearCategoria(ResultSet rs) throws SQLException 
+    {
+        Categoria c=new Categoria();
+
+        c.setId(rs.getLong("ID_CATEGORIA"));
+        try{c.setNombre(rs.getString("NOMBRE"));}catch(SQLException e){c.setNombre(null);}
+        try{c.setDescripcion(rs.getString("DESCRIPCION_DETALLADA"));}catch(SQLException e){c.setDescripcion(null);}
+        try{c.setTipo(rs.getString("TIPO_DE_CATEGORIA"));}catch(SQLException e){c.setTipo(null);}
+
+        // timestamps y created/modified
+        try{c.setCreadoEn(rs.getTimestamp("CREADO_EN"));}catch(SQLException e){c.setCreadoEn(null);}
+        try{c.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));}catch(SQLException e){c.setModificadoEn(null);}
+        try{c.setCreadoPor(rs.getString("CREADO_POR"));}catch(SQLException e){c.setCreadoPor(null);}
+        try{c.setModificadoPor(rs.getString("MODIFICADO_POR"));}catch(SQLException e){c.setModificadoPor(null);}
+
+        // idUsuario no existe en tu tabla actual; si lo agregas podrías mapearlo igual aquí.
+        try 
+        {
+            long idUsr=rs.getLong("ID_USUARIO");
+            if(rs.wasNull())c.setIdUsuario(null);
+            else c.setIdUsuario(idUsr);
+        }catch(SQLException e){
+            
+            c.setIdUsuario(null);
+        }
+
+        return c;
     }
     public void InsertarSubcategoria(long idCategoria,String nombre,String descripcion,boolean esDefecto,String creadoPor)throws SQLException 
     {
         
-        String SQL="CALL PUBLIC.SP_INSERTAR_SUBCATEGORIA(?,?,?,?,?)";
-        
-        try(Connection cn=ConexionBD.getConnection(); CallableStatement cs=cn.prepareCall(SQL)) 
+        String SQL="{ CALL SP_INSERTAR_SUBCATEGORIA(?,?,?,?,?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
+
             cs.setLong(1, idCategoria);
             cs.setString(2, nombre);
             cs.setString(3, descripcion);
@@ -370,1281 +347,960 @@ public class Puente_Sql_Java
 
             cs.execute();
         }
-        
     }
     public void ActualizarSubcategoria(long idSubcategoria,String nombre,String descripcion,String modificadoPor)throws SQLException 
     {
-        
-        String SQL="CALL PUBLIC.SP_ACTUALIZAR_SUBCATEGORIA(?,?,?,?)";
-       
-        try(Connection cn=ConexionBD.getConnection();CallableStatement cs=cn.prepareCall(SQL)) 
+        String SQL="{ CALL SP_ACTUALIZAR_SUBCATEGORIA(?,?,?,?) }";
+        try (Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
-            
+
             cs.setLong(1, idSubcategoria);
             cs.setString(2, nombre);
             cs.setString(3, descripcion);
-            cs.setString(4, modificadoPor);
 
-            cs.executeUpdate();
-            
-        }
-
-    }
-    public void EliminarSubcategoria(long idSubcategoria)throws SQLException
-    {
-        
-        String sqlUsoPresuDet="SELECT COUNT(*) FROM PRESUPUESTO_DETALLE WHERE Id_subcategoria =?";
-        String sqlUsoTrans="SELECT COUNT(*) FROM TRANSACCION WHERE Id_subcategoria = ?";
-        String sqlUsoMeta="SELECT COUNT(*) FROM META_AHORRO WHERE Id_subcategoria = ?";
-        String sqlUsoObligacion="SELECT COUNT(*) FROM OBLIGACION_FIJA WHERE Id_subcategoria = ?";
-        
-        String sqlSpEliminar="CALL PUBLIC.SP_ELIMINAR_SUBCATEGORIA(?)";
-        
-        Connection con=null;
-        
-        try
-        {
-            
-            con=ConexionBD.getConnection();
-            con.setAutoCommit(false);//se empieza con transaccion
-            
-            int totalUsos=0;
-            
-            //presupuesto_detalla
-            try(PreparedStatement ps=con.prepareStatement(sqlUsoPresuDet))
+            if(modificadoPor==null) 
             {
-                
-                ps.setLong(1,idSubcategoria);
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next())
-                    {
-                        
-                        totalUsos+=rs.getInt(1);
-                        
-                    }
-                    
-                }
-                
-            }
-            //transaccion
-            try(PreparedStatement ps=con.prepareStatement(sqlUsoTrans))
-            {
-                
-                ps.setLong(1, idSubcategoria);
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next())
-                    {
-                        
-                        totalUsos+=rs.getInt(1);
-                        
-                    }
-                    
-                }
-                
-            }
-            //meta_ahorro
-            try(PreparedStatement ps=con.prepareStatement(sqlUsoMeta))
-            {
-                
-                ps.setLong(1, idSubcategoria);
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next())
-                    {
-                        
-                        totalUsos+=rs.getInt(1);
-                        
-                    }
-                    
-                }
-                
-            }
-            //obligacion_fija
-            try(PreparedStatement ps=con.prepareStatement(sqlUsoObligacion))
-            {
-                
-                ps.setLong(1, idSubcategoria);
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next())
-                    {
-                        
-                        totalUsos+=rs.getInt(1);
-                        
-                    }
-                    
-                }
-                
-            }
-            if(totalUsos>0)
-            {
-                
-                throw new SQLException("No se puede eliminar la subcategoria "+idSubcategoria+": esta en uso en presupuesto, transacciones, metas o obligaciones");
-                
-            }
-            //si no esta en uso, llamo al sp
-            try(CallableStatement cs=con.prepareCall(sqlSpEliminar))
-            {
-                
-                cs.setLong(1, idSubcategoria);
-                cs.executeUpdate();
-                
-            }
-            con.commit();
-            System.out.println("subcategoria "+idSubcategoria+" eliminada correctamente");
-                
-            
-        }catch(SQLException tamarindo){
-            
-            if(con!=null)
-            {
-                
-                try{con.rollback();}catch(SQLException ignorar){}
-                
-            }
-            throw tamarindo;
-            
-        }finally{
-            
-            if(con!=null)
-            {
-                
-                try
-                {
-                    
-                    con.setAutoCommit(true);
-                    con.close();
-                    
-                }catch(SQLException ignore){}
-                
-            }
-            
-        }
-
-    }
-    public LinkedHashMap<String,Object>consultarSubCategoria(long idSubcategoria)throws SQLException
-    {
-        
-        String SQL="SELECT s.Id_subcategoria, "+
-        "s.Id_categoria, "+
-        "s.Nombre_subcategoria, "+
-        "s.Descripcion_detallada, "+
-        "s.Estado, "+
-        "s.Por_defecto, "+
-        "s.creado_en, s.modificado_en, s.creado_por, s.modificado_por, " +
-        "c.Nombre AS Nombre_categoria, "+
-        "c.Tipo_de_categoria "+
-        "FROM SUBCATEGORIA s "+
-        "JOIN CATEGORIA c ON c.Id_categoria =s.Id_categoria "+"WHERE s.Id_subcategoria=?";
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps =con.prepareStatement(SQL)) 
-        {
-            
-            ps.setLong(1, idSubcategoria);
-            
-            try(ResultSet rs=ps.executeQuery())
-            {
-                
-                if(rs.next())
-                {
-                    
-                    LinkedHashMap<String,Object> fila=new LinkedHashMap<>();
-
-                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                    fila.put("id_categoria", rs.getLong("Id_categoria"));
-                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                    fila.put("descripcion_detallada", rs.getString("Descripcion_detallada"));
-                    fila.put("estado", rs.getBoolean("Estado"));
-                    fila.put("por_defecto", rs.getBoolean("Por_defecto"));
-                    fila.put("creado_en", rs.getTimestamp("creado_en"));
-                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-                    fila.put("creado_por", rs.getString("creado_por"));
-                    fila.put("modificado_por", rs.getString("modificado_por"));
-                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                    
-                    return fila;
-
-                }else{
-                    
-                    return null;
-                    
-                }
-                
-            }
-            
-        }
-        
-    }
-    public List<LinkedHashMap<String,Object>>listarSubcategoriasPorCategoria(long idCategoria)throws SQLException
-    {
-        
-        String SQL= "SELECT s.Id_subcategoria, "+
-        "s.Id_categoria, "+
-        "s.Nombre_subcategoria, "+
-        "s.Descripcion_detallada, "+
-        "s.Estado, "+
-        "s.Por_defecto, "+
-        "s.creado_en, s.modificado_en, s.creado_por, s.modificado_por, " +
-        "c.Nombre AS Nombre_categoria, "+
-        "c.Tipo_de_categoria "+
-        "FROM SUBCATEGORIA s "+
-        "JOIN CATEGORIA c ON c.Id_categoria = s.Id_categoria "+
-        "WHERE s.Id_categoria = ? "+
-        "ORDER BY s.Id_subcategoria";
-        
-        List<LinkedHashMap<String,Object>>lista=new ArrayList<>();
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
-        {
-            
-            ps.setLong(1, idCategoria);
-            try(ResultSet rs=ps.executeQuery())
-            {
-                
-                while(rs.next()) 
-                {
-
-                    LinkedHashMap<String,Object>fila= new LinkedHashMap<>();
-                    
-                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                    fila.put("id_categoria", rs.getLong("Id_categoria"));
-                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                    fila.put("descripcion_detallada", rs.getString("Descripcion_detallada"));
-                    fila.put("estado", rs.getBoolean("Estado"));
-                    fila.put("por_defecto", rs.getBoolean("Por_defecto"));
-                    fila.put("creado_en", rs.getTimestamp("creado_en"));
-                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-                    fila.put("creado_por", rs.getString("creado_por"));
-                    fila.put("modificado_por", rs.getString("modificado_por"));
-                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                    
-                    lista.add(fila);
-
-                }
-
-            }
-            
-        }
-        return lista;
-        
-    }
-    public void insertarPresupuesto(long idUsuario,String nombre,String descripcion,int anioInicio,int mesInicio,int anioFin,int mesFin,String creadoPor)throws SQLException 
-    {
-        
-        //validaciones 
-        if(mesInicio<1||mesFin>12||mesFin<1||mesInicio>12)
-        {
-            
-            throw new SQLException("Mes de inicio/fin fuera de rango (1...12)");
-            
-        }
-        int inicioNuevo=anioInicio*100+mesInicio;
-        int finNuevo=anioFin*100+mesFin;
-        
-        if(finNuevo<inicioNuevo)
-        {
-            
-            throw new SQLException("El periodo de fin debe ser posterior o igual al de inicio");
-            
-        }
-        
-        String SQL_VALIDAR="SELECT COUNT(*) "+"FROM PRESUPUESTO " +"WHERE Id_usuario =? "+"AND Estado_presupuesto='activo' " +"AND(Anio_de_inicio*100+Mes_de_inicio)<=? "+"AND (Anio_de_fin*100+Mes_de_fin)>=?";
-        
-        String SQL="CALL PUBLIC.SP_INSERTAR_PRESUPUESTO(?,?,?,?,?,?,?,?)";
-        
-        try(Connection con =ConexionBD.getConnection())
-        {
-            
-            //1) validar solapamiento de periodos con otros presupuestos activo del mismo usuario
-            try(PreparedStatement ps=con.prepareStatement(SQL_VALIDAR))
-            {
-                
-                ps.setLong(1, idUsuario);
-                ps.setInt(2, finNuevo);    // <= nuevo fin
-                ps.setInt(3, inicioNuevo); // >= nuevo inicio
-                
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next()&&rs.getInt(1)>0)
-                    {
-                        
-                        throw new SQLException("Ya existe un presupuesto ACTIVO para este usuario"+" en un periodo que se traslapa con el inddicado");
-                        
-                    }
-                    
-                }
-                
-            }
-            //insertar presupuesto
-            try(CallableStatement cs=con.prepareCall(SQL))
-            {
-                
-                cs.setLong(1, idUsuario);
-                cs.setString(2, nombre);
-                cs.setString(3, descripcion); // por ahora la tabla no tiene campo específico, pero es parte de la firma
-                cs.setInt(4, anioInicio);
-                cs.setInt(5, mesInicio);
-                cs.setInt(6, anioFin);
-                cs.setInt(7, mesFin);
-                cs.setString(8, creadoPor);
-                
-                cs.execute();
-                
-            }
-            
-        }
-        
-    }
-    public void ActualizarPresupuesto(long idPresupuesto,String nombre,String descripcion,int anioInicio,int mesInicio,int anioFin,int mesFin,String modificadoPor)throws SQLException 
-    {
-        
-        //validaciones 
-        if(mesInicio<1||mesFin>12||mesFin<1||mesInicio>12)
-        {
-            
-            throw new SQLException("Mes de inicio/fin fuera de rango (1...12)");
-            
-        }
-        int inicioNuevo=anioInicio*100+mesInicio;
-        int finNuevo=anioFin*100+mesFin;
-        
-        if(finNuevo<inicioNuevo)
-        {
-            
-            throw new SQLException("El periodo de fin debe ser posterior o igual al de inicio");
-            
-        }
-        
-        String SQL_OBTENER_USUARIO="SELECT Id_usuario, Estado_presupuesto "+"FROM PRESUPUESTO "+"WHERE Id_presupuesto =?";
-        
-        String SQL_VALIDAR="SELECT COUNT(*) "+
-        "FROM PRESUPUESTO "+
-        "WHERE Id_usuario =? "+
-        "AND Estado_presupuesto = 'activo' "+
-        "AND Id_presupuesto <> ? "+    // excluir el mismo
-        "AND (Anio_de_inicio*100+Mes_de_inicio)<=? "+
-        "AND (Anio_de_fin *100+Mes_de_fin)>=?";
-
-        String SQL="CALL PUBLIC.SP_ACTUALIZAR_PRESUPUESTO(?,?,?,?,?,?,?,?)";
-        
-        try(Connection con=ConexionBD.getConnection())
-        {
-            
-            long idUsuario;
-            String estado;
-            
-            //aqui obtenemos el usuario y el estado del presupuesto
-            try(PreparedStatement ps=con.prepareStatement(SQL_OBTENER_USUARIO))
-            {
-                
-                ps.setLong(1, idPresupuesto);
-                
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(!rs.next())
-                    {
-                        
-                        throw new SQLException("no existe el presupuesto con ID = "+idPresupuesto);
-                        
-                    }
-                    idUsuario=rs.getLong("Id_usuario");
-                    estado=rs.getString("Estado_presupuesto");
-                    
-                }
-                
-            }
-            //aqui se valida el solapamiento si este presupuesto esta activo
-            if("activo".equalsIgnoreCase(estado))
-            {
-                
-                try(PreparedStatement ps=con.prepareStatement(SQL_VALIDAR))
-                {
-                    
-                    ps.setLong(1, idUsuario);
-                    ps.setLong(2, idPresupuesto);
-                    ps.setInt(3, finNuevo);
-                    ps.setInt(4, inicioNuevo);
-
-                    try(ResultSet rs=ps.executeQuery())
-                    {
-                        
-                        if(rs.next()&&rs.getInt(1)>0)
-                        {
-                            
-                            throw new SQLException("No se puede actualizar: el nuevo periodo se traslapa "+" con otro presupuesto ACTIVO del mismo usuario");
-                            
-                        }
-                        
-                    }
-                    
-                }
-                
-            }
-            //aqui se ejecuta la actualizacion
-            try(CallableStatement cs=con.prepareCall(SQL))
-            {
-                
-                
-                cs.setLong(1, idPresupuesto);
-                cs.setString(2, nombre);
-                cs.setString(3, descripcion);
-                cs.setInt(4, anioInicio);
-                cs.setInt(5, mesInicio);
-                cs.setInt(6, anioFin);
-                cs.setInt(7, mesFin);
-                cs.setString(8, modificadoPor);
-                
-                cs.executeUpdate();
-
-            }
-            
-        }
-
-        
-    }
-    public void EliminarPresupuesto(long idPresupuesto)throws SQLException
-    {
-        
-        String SQL_VALIDAR_USO="SELECT COUNT(*) "+"FROM TRANSACCION "+"WHERE Id_presupuesto =?";
-        
-        String SQL="CALL PUBLIC.SP_ELIMINAR_PRESUPUESTO(?)";
-        
-        try(Connection con=ConexionBD.getConnection())
-        {
-            
-            //aqui se verifica si hay transacciones asociadas
-            try(PreparedStatement ps=con.prepareStatement(SQL_VALIDAR_USO))
-            {
-                
-                ps.setLong(1, idPresupuesto);
-                
-                try(ResultSet rs=ps.executeQuery())
-                {
-                    
-                    if(rs.next()&&rs.getInt(1)>0)
-                    {
-                        
-                        throw new SQLException("No se puede eliminar el presupuesto "+idPresupuesto+ ": no tiene transacciones asociadas");
-                        
-                    }
-                    
-                }
-                
-            }
-            //si no tiene transacciones,llamar a la funcion de eliminar
-            try(CallableStatement cs=con.prepareCall(SQL))
-            {
-                
-                cs.setLong(1, idPresupuesto);
-                cs.executeUpdate();
-                
-            }
-            
-        }
-
-        
-    }
-    public LinkedHashMap<String,Object>consultarPresupuesto(long idPresupuesto)throws SQLException
-    {
-        
-        String SQL="SELECT Id_presupuesto, Id_usuario, Nombre_descriptivo, Anio_de_inicio, Mes_de_inicio, "+
-        "Anio_de_fin, Mes_de_fin, Total_de_ingresos, Total_de_gastos, Total_de_ahorro, "+
-        "Fecha_hora_creacion, Estado_presupuesto, creado_en, modificado_en, creado_por, modificado_por "+
-        "FROM PRESUPUESTO "+
-        "WHERE Id_presupuesto = ?";
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
-        {
-            
-            ps.setLong(1, idPresupuesto);
-            
-            try(ResultSet rs=ps.executeQuery())
-            {
-                
-                if(rs.next())
-                {
-                    
-                    LinkedHashMap<String,Object>fila=new LinkedHashMap<>();
-                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
-                    fila.put("id_usuario", rs.getLong("Id_usuario"));
-                    fila.put("nombre_descriptivo", rs.getString("Nombre_descriptivo"));
-                    fila.put("anio_de_inicio", rs.getInt("Anio_de_inicio"));
-                    fila.put("mes_de_inicio", rs.getInt("Mes_de_inicio"));
-                    fila.put("anio_de_fin", rs.getInt("Anio_de_fin"));
-                    fila.put("mes_de_fin", rs.getInt("Mes_de_fin"));
-                    fila.put("total_de_ingresos", rs.getBigDecimal("Total_de_ingresos"));
-                    fila.put("total_de_gastos", rs.getBigDecimal("Total_de_gastos"));
-                    fila.put("total_de_ahorro", rs.getBigDecimal("Total_de_ahorro"));
-                    fila.put("fecha_hora_creacion", rs.getTimestamp("Fecha_hora_creacion"));
-                    fila.put("estado_presupuesto", rs.getString("Estado_presupuesto"));
-                    fila.put("creado_en", rs.getTimestamp("creado_en"));
-                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-                    fila.put("creado_por", rs.getString("creado_por"));
-                    fila.put("modificado_por", rs.getString("modificado_por"));
-                    return fila;
-                    
-                }else{
-                    
-                    return null;
-                    
-                }
-                
-            }
-            
-        }
-        
-    }
-    //listar presupuesto por usuario
-    public List<LinkedHashMap<String,Object>>listarPresupuestoPorUsuario(long idUsuario,String estado)throws SQLException
-    {
-        
-        StringBuilder sb=new StringBuilder();
-        sb.append("SELECT Id_presupuesto, Id_usuario, Nombre_descriptivo, Anio_de_inicio, Mes_de_inicio, ");
-        sb.append("Anio_de_fin, Mes_de_fin, Total_de_ingresos, Total_de_gastos, Total_de_ahorro, ");
-        sb.append("Fecha_hora_creacion, Estado_presupuesto, creado_en, modificado_en, creado_por, modificado_por ");
-        sb.append("FROM PRESUPUESTO ");
-        sb.append("WHERE Id_usuario =? ");
-        
-        if(estado!=null&&!estado.isBlank())
-        {
-            
-            sb.append("AND Estado_presupuesto=?");
-            
-        }
-        sb.append("ORDER BY Id_presupuesto");
-        
-        String SQL=sb.toString();
-        
-        List<LinkedHashMap<String,Object>>lista=new ArrayList<>();
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL))
-        {
-            
-            ps.setLong(1, idUsuario);
-            if(estado!=null&&!estado.isBlank())
-            {
-                
-                ps.setString(2,estado);
-                
-            }
-            try(ResultSet rs=ps.executeQuery())
-            {
-                
-                while(rs.next())
-                {
-               
-                    LinkedHashMap<String, Object>fila=new LinkedHashMap<>();
-                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
-                    fila.put("id_usuario", rs.getLong("Id_usuario"));
-                    fila.put("nombre_descriptivo", rs.getString("Nombre_descriptivo"));
-                    fila.put("anio_de_inicio", rs.getInt("Anio_de_inicio"));
-                    fila.put("mes_de_inicio", rs.getInt("Mes_de_inicio"));
-                    fila.put("anio_de_fin", rs.getInt("Anio_de_fin"));
-                    fila.put("mes_de_fin", rs.getInt("Mes_de_fin"));
-                    fila.put("total_de_ingresos", rs.getBigDecimal("Total_de_ingresos"));
-                    fila.put("total_de_gastos", rs.getBigDecimal("Total_de_gastos"));
-                    fila.put("total_de_ahorro", rs.getBigDecimal("Total_de_ahorro"));
-                    fila.put("fecha_hora_creacion", rs.getTimestamp("Fecha_hora_creacion"));
-                    fila.put("estado_presupuesto", rs.getString("Estado_presupuesto"));
-                    fila.put("creado_en", rs.getTimestamp("creado_en"));
-                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-                    fila.put("creado_por", rs.getString("creado_por"));
-                    fila.put("modificado_por", rs.getString("modificado_por"));
-                    
-                    lista.add(fila);
-                    
-                }
-                
-            }
-            
-        }
-        return lista;
-        
-    }
-    public void recalcularTotalesPresupuesto(long idPresupuesto)throws SQLException
-    {
-    
-        String SQL = "{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
-
-        try (Connection con = ConexionBD.getConnection(); CallableStatement cstmt = con.prepareCall(SQL)) {
-
-            cstmt.setLong(1, idPresupuesto);
-            cstmt.execute();
-            System.out.println("SP_RECALCULA_TOTALES_PARA_PRESUPUESTO: OK");
-        }
-
-    }
-    public  void insertarDetalleYRecalcular(long idPresupuesto, long idSubcategoria,BigDecimal montoMensual, String justificacion,String creadoPor) throws SQLException
-    {
-
-        String SQL_insertar = "{ CALL SP_INSERTAR_PRESUPUESTO_DETALLE(?,?,?,?,?) }";
-        String SQL_recalcular = "{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
-
-        try (Connection con = ConexionBD.getConnection(); CallableStatement cstmtIns = con.prepareCall(SQL_insertar); CallableStatement cstmtRecal = con.prepareCall(SQL_recalcular)) {
-
-            con.setAutoCommit(false);
-            try {
-                cstmtIns.setLong(1, idPresupuesto);
-                cstmtIns.setLong(2, idSubcategoria);
-                cstmtIns.setBigDecimal(3, montoMensual);
-                cstmtIns.setString(4, justificacion);
-                cstmtIns.setString(5, creadoPor);
-                cstmtIns.execute();
-
-                // CORRECCIÓN: usar cstmtRecal para preparar el recálculo
-                cstmtRecal.setLong(1, idPresupuesto);
-                cstmtRecal.execute();
-
-                con.commit();
-                System.out.println("Insertar detalle + recalcular: OK");
-
-            } catch (SQLException e) {
-                con.rollback();
-                String msg = interpretarSQLException(e);
-                throw new SQLException(msg, e);
-            } finally {
-                con.setAutoCommit(true);
-            }
-        }
-    }
-    /*
-    
-        Actualiza un detalle y recalcula totales (transaccional).
-    
-    */
-    public  void actualizarDetalleYRecalcular(long idDetalle,BigDecimal nuevoMonto,String nuevaJustificacion,String modificadoPor)throws SQLException
-    {
-        
-        String callUpdate="{ CALL SP_ACTUALIZAR_PRESUPUESTO_DETALLE(?,?,?,?) }";
-        String selectPresu="SELECT Id_presupuesto FROM PRESUPUESTO_DETALLE WHERE Id_presupuesto_detalle = ?";
-        String callRecalc="{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
-        
-        try(Connection conn=ConexionBD.getConnection();PreparedStatement psGet = conn.prepareStatement(selectPresu);CallableStatement cstmtUpd=conn.prepareCall(callUpdate);CallableStatement cstmtRecalc=conn.prepareCall(callRecalc)) 
-        {
-            
-            conn.setAutoCommit(false);
-            try
-            {
-                
-                //obtener el idpresupuesto
-                psGet.setLong(1, idDetalle);
-                long idPresupuesto;
-                
-                try(ResultSet rs=psGet.executeQuery())
-                {
-                    
-                    if(!rs.next())throw new SQLException("Detalle no encontrado: "+idDetalle);
-                    idPresupuesto=rs.getLong(1);
-                    
-                }
-                  cstmtUpd.setLong(1, idDetalle);
-                cstmtUpd.setBigDecimal(2, nuevoMonto);
-                cstmtUpd.setString(3, nuevaJustificacion);
-                cstmtUpd.setString(4, modificadoPor);
-                cstmtUpd.execute();
-
-                cstmtRecalc.setLong(1, idPresupuesto);
-                cstmtRecalc.execute();
-                
-                conn.commit();
-                System.out.println("Update detalle + recalc: OK");
-
-                
-            }catch(SQLException e){
-                
-                conn.rollback();
-                throw e;
-                
-            }finally{
-                
-                conn.setAutoCommit(true);
-                
-            }
-            
-        }
-
-        
-    }
-    /*
-    
-        Elimina un detalle y recalcula totales (transaccional).
-    
-    */
-    public  void eliminarDetalleYRecalcular(long idDetalle) throws SQLException 
-    {
-        
-        String selectPresu="SELECT Id_presupuesto FROM PRESUPUESTO_DETALLE WHERE Id_presupuesto_detalle = ?";
-        String callDelete="{ CALL SP_ELIMINAR_PRESUPUESTO_DETALLE(?) }";
-        String callRecalc="{ CALL SP_RECALCULA_TOTALES_PARA_PRESUPUESTO(?) }";
-
-        try(Connection conn=ConexionBD.getConnection(); PreparedStatement psGet=conn.prepareStatement(selectPresu); CallableStatement cstmtDel=conn.prepareCall(callDelete); CallableStatement cstmtRecalc=conn.prepareCall(callRecalc)) 
-        {
-
-            conn.setAutoCommit(false);
-            try 
-            {
-                psGet.setLong(1, idDetalle);
-                long idPresupuesto;
-                try(ResultSet rs=psGet.executeQuery()) 
-                {
-                    if(!rs.next()) 
-                    {
-                        
-                        throw new SQLException("Detalle no encontrado: "+idDetalle);
-                        
-                    }
-                    idPresupuesto =rs.getLong(1);
-                }
-
-                cstmtDel.setLong(1, idDetalle);
-                cstmtDel.execute();
-
-                cstmtRecalc.setLong(1, idPresupuesto);
-                cstmtRecalc.execute();
-
-                conn.commit();
-                System.out.println("Delete detalle + recalc: OK");
-            }catch(SQLException ex){
-                
-                conn.rollback();
-                throw ex;
-                
-            }finally{
-                
-                conn.setAutoCommit(true);
-                
-            }
-        }
-    }
-    /*
-    
-        Recalcula totales a partir de un id_detalle (llama al SP que obtiene el presupuesto desde la fila detalle).
-    
-    */
-    public void recalcularTotalesPorDetalle(long idDetalle) throws SQLException {
-        String SQL = "{ CALL SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE(?) }";
-        try (Connection conn = ConexionBD.getConnection(); CallableStatement cstmt = conn.prepareCall(SQL)) {
-
-            cstmt.setLong(1, idDetalle);
-            cstmt.execute();
-            System.out.println("SP_RECALCULAR_TOTALES_PARA_PRESUPUESTO_IDDETALLE: OK");
-
-        }
-    }
-
-    public List<LinkedHashMap<String, Object>> listarDetallesPresupuesto(long p_id_presupuesto) throws SQLException {
-        String SQL=""
-                +"SELECT pd.Id_presupuesto_detalle, pd.Id_presupuesto, pd.Id_subcategoria, pd.Monto_mensual, "
-                +"pd.Justificacion_del_monto, pd.creado_en, pd.modificado_en, "
-                +"s.Nombre_subcategoria, s.Descripcion_detallada AS Descripcion_subcategoria, "
-                +"c.Id_categoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
-                +"FROM PUBLIC.PRESUPUESTO_DETALLE pd "
-                +"JOIN PUBLIC.SUBCATEGORIA s ON pd.Id_subcategoria = s.Id_subcategoria "
-                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
-                +"WHERE pd.Id_presupuesto = ? "
-                +"ORDER BY pd.Id_presupuesto_detalle";
-
-        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
-
-        try(Connection con =ConexionBD.getConnection(); PreparedStatement ps= con.prepareStatement(SQL)) 
-        {
-
-            ps.setLong(1, p_id_presupuesto);
-
-            try(ResultSet rs = ps.executeQuery()) 
-            {
-                while(rs.next()) 
-                {
-                    LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
-                    fila.put("id_presupuesto_detalle", rs.getLong("Id_presupuesto_detalle"));
-                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
-                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                    fila.put("monto_mensual", rs.getBigDecimal("Monto_mensual"));
-                    fila.put("justificacion", rs.getString("Justificacion_del_monto"));
-                    fila.put("creado_en", rs.getTimestamp("creado_en"));
-                    fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                    fila.put("descripcion_subcategoria", rs.getString("Descripcion_subcategoria"));
-                    fila.put("id_categoria", rs.getLong("Id_categoria"));
-                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                    lista.add(fila);
-                }
-            }
-        }
-
-        return lista;
-    }
-    
-    public LinkedHashMap<String, Object> consultarPresupuestoDetalle(long p_id_detalle) throws SQLException 
-    {
-        String SQL=""
-                +"SELECT pd.Id_presupuesto_detalle, pd.Id_presupuesto, pd.Id_subcategoria, pd.Monto_mensual, "
-                +"pd.Justificacion_del_monto, pd.creado_en, pd.modificado_en, "
-                +"p.Nombre_descriptivo AS Nombre_presupuesto, "
-                +"s.Nombre_subcategoria, s.Descripcion_detallada AS Descripcion_subcategoria, "
-                +"c.Id_categoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
-                +"FROM PUBLIC.PRESUPUESTO_DETALLE pd "
-                +"JOIN PUBLIC.PRESUPUESTO p ON pd.Id_presupuesto = p.Id_presupuesto "
-                +"JOIN PUBLIC.SUBCATEGORIA s ON pd.Id_subcategoria = s.Id_subcategoria "
-                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
-                +"WHERE pd.Id_presupuesto_detalle = ?";
-
-        try(Connection con =ConexionBD.getConnection(); PreparedStatement ps =con.prepareStatement(SQL)) 
-        {
-
-            ps.setLong(1, p_id_detalle);
-
-            try(ResultSet rs =ps.executeQuery()) 
-            {
-                if(!rs.next()) 
-                {
-                    return null;
-                }
-
-                LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
-
-                fila.put("id_presupuesto_detalle", rs.getLong("Id_presupuesto_detalle"));
-                fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
-                fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                fila.put("monto_mensual", rs.getBigDecimal("Monto_mensual"));
-                fila.put("justificacion", rs.getString("Justificacion_del_monto"));
-                fila.put("creado_en", rs.getTimestamp("creado_en"));
-                fila.put("modificado_en", rs.getTimestamp("modificado_en"));
-
-                // Info del presupuesto
-                fila.put("nombre_presupuesto", rs.getString("Nombre_presupuesto"));
-
-                // Info de subcategoria
-                fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                fila.put("descripcion_subcategoria", rs.getString("Descripcion_subcategoria"));
-
-                // Info de categoria
-                fila.put("id_categoria", rs.getLong("Id_categoria"));
-                fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-
-                return fila;
-            }
-        }
-    }
-    // Insertar obligación fija
-
-    public void insertarObligacion(long idUsuario,long idSubcategoria,String nombre,String descripcion,BigDecimal monto,int diaVencimiento,java.sql.Date fechaInicio,java.sql.Date fechaFin,String creadoPor) throws SQLException 
-    {
-
-        String SQL="{ CALL PUBLIC.SP_INSERTAR_OBLIGACION(?,?,?,?,?,?,?,?,?) }";
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
-        {
-
-            cs.setLong(1, idUsuario);
-            cs.setLong(2, idSubcategoria);
-            cs.setString(3, nombre);
-            cs.setString(4, descripcion);
-            cs.setBigDecimal(5, monto);
-            cs.setInt(6, diaVencimiento);
-            cs.setDate(7, fechaInicio);
-            if(fechaFin!=null) 
-            {
-                cs.setDate(8, fechaFin);
-                
+                cs.setNull(4, java.sql.Types.VARCHAR);
             }else{
-                
-                cs.setNull(8, java.sql.Types.DATE);
-                
+                cs.setString(4, modificadoPor);
             }
-            
-            cs.setString(9, creadoPor);
 
             cs.execute();
         }
     }
-
-    public void actualizarObligacion(long idObligacion,String nombre,String descripcion,BigDecimal monto,int diaVencimiento,java.sql.Date fechaFin,boolean activo,String modificadoPor) throws SQLException
+    public boolean EliminarSubcategoria(long idSubcategoria)throws SQLException 
     {
-
-        String SQL="{ CALL PUBLIC.SP_ACTUALIZAR_OBLIGACION(?,?,?,?,?,?,?,?) }";
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        String SQL="{ CALL SP_ELIMINAR_SUBCATEGORIA(?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
 
-            cs.setLong(1, idObligacion);
-            cs.setString(2, nombre);
-            cs.setString(3, descripcion);
-            cs.setBigDecimal(4, monto);
-            cs.setInt(5, diaVencimiento);
-            if(fechaFin!=null) 
+            cs.setLong(1, idSubcategoria);
+            cs.execute();
+            return true;
+
+        }catch(SQLException ex){
+            String sqlState=ex.getSQLState();
+            
+            if("45000".equals(sqlState)) 
             {
                 
-                cs.setDate(6, fechaFin);
-                
-            }else{
-                
-                cs.setNull(6, java.sql.Types.DATE);
-                
+                System.err.println("BD controlada: " + ex.getMessage());
+                throw ex; // o envolver en una excepción de negocio
             }
-            cs.setBoolean(7, activo);
-            cs.setString(8, modificadoPor);
-
-            cs.executeUpdate();
+            
+            if("23503".equals(sqlState) || "23513".equals(sqlState) || "23000".equals(sqlState)) 
+            {
+                throw new SQLException("No se puede eliminar la subcategoría: está en uso o viola restricciones de integridad.", sqlState);
+            }
+            throw ex;
         }
     }
-
-    public void eliminarObligacion(long idObligacion) throws SQLException 
+    public Subcategoria ConsultarSubcategoria(long idSubcategoria) throws SQLException 
     {
-        String SQL="{ CALL PUBLIC.SP_ELIMINAR_OBLIGACION(?) }";
-        try(Connection con =ConexionBD.getConnection(); CallableStatement cs =con.prepareCall(SQL)) 
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_SUBCATEGORIA(?))";
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
         {
 
-            cs.setLong(1, idObligacion);
-            cs.executeUpdate();
-
+            ps.setLong(1, idSubcategoria);
+            try(ResultSet rs = ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    return mapearSubcategoria(rs);
+                }else{
+                    
+                    return null;
+                    
+                }
+            }
+        }catch(SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (consultar subcategoria): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
         }
     }
-
-    public List<LinkedHashMap<String, Object>> listarObligacionesPorUsuario(long idUsuario) throws SQLException {
-
-        String SQL="SELECT o.Id_obligacion_fija, o.Id_usuario, o.Id_subcategoria, o.Nombre, o.Descripcion_detallada, "
-                +"o.Monto_fijo_mensual, o.Dia_del_mes_de_vencimiento, o.Esta_vigente, o.Fecha_inicio_de_la_obligacion, o.Fecha_de_finalizacion, "
-                +"s.Nombre_subcategoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
-                +"FROM PUBLIC.OBLIGACION_FIJA o "
-                +"JOIN PUBLIC.SUBCATEGORIA s ON o.Id_subcategoria = s.Id_subcategoria "
-                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria = c.Id_categoria "
-                +"WHERE o.Id_usuario = ? "
-                +"ORDER BY o.Id_obligacion_fija";
-
-        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
-        try(Connection con = ConexionBD.getConnection(); PreparedStatement ps = con.prepareStatement(SQL)) 
+    public List<Subcategoria>ListarSubcategoriasPorCategoria(long idCategoria)throws SQLException 
+    {
+        List<Subcategoria>lista=new ArrayList<>();
+        String SQL="SELECT * FROM TABLE(SP_LISTAR_SUBCATEGORIAS_POR_CATEGORIA(?))";
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
         {
-            ps.setLong(1, idUsuario);
-            try(ResultSet rs =ps.executeQuery()) 
+
+            ps.setLong(1, idCategoria);
+            try(ResultSet rs=ps.executeQuery()) 
             {
                 while(rs.next()) 
                 {
-                    LinkedHashMap<String, Object> fila =new LinkedHashMap<>();
-                    fila.put("id_obligacion", rs.getLong("Id_obligacion_fija"));
-                    fila.put("id_usuario", rs.getLong("Id_usuario"));
-                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                    fila.put("nombre", rs.getString("Nombre"));
-                    fila.put("descripcion", rs.getString("Descripcion_detallada"));
-                    fila.put("monto", rs.getBigDecimal("Monto_fijo_mensual"));
-                    fila.put("dia_vencimiento", rs.getInt("Dia_del_mes_de_vencimiento"));
-                    fila.put("esta_vigente", rs.getBoolean("Esta_vigente"));
-                    fila.put("fecha_inicio", rs.getDate("Fecha_inicio_de_la_obligacion"));
-                    fila.put("fecha_fin", rs.getDate("Fecha_de_finalizacion"));
-                    fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                    fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                    fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                    lista.add(fila);
+                    
+                    lista.add(mapearSubcategoria(rs));
+                    
                 }
             }
         }
         return lista;
     }
-
-    public LinkedHashMap<String, Object> consultarObligacion(long idObligacion) throws SQLException 
+    private Subcategoria mapearSubcategoria(ResultSet rs)throws SQLException 
     {
-        String SQL="SELECT o.*, s.Nombre_subcategoria, c.Nombre AS Nombre_categoria, c.Tipo_de_categoria "
-                +"FROM PUBLIC.OBLIGACION_FIJA o "
-                +"JOIN PUBLIC.SUBCATEGORIA s ON o.Id_subcategoria=s.Id_subcategoria "
-                +"JOIN PUBLIC.CATEGORIA c ON s.Id_categoria =c.Id_categoria "
-                +"WHERE o.Id_obligacion_fija =?";
-        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        
+        Subcategoria s=new Subcategoria();
+        s.setId(rs.getLong("ID_SUBCATEGORIA"));
+        try{s.setIdCategoria(rs.getLong("ID_CATEGORIA"));}catch(SQLException e){}
+        try{s.setNombre(rs.getString("NOMBRE_SUBCATEGORIA"));}catch(SQLException e){}
+        try{s.setDescripcion(rs.getString("DESCRIPCION_DETALLADA"));}catch(SQLException e){}
+
+        try 
         {
-            ps.setLong(1, idObligacion);
-            try(ResultSet rs=ps.executeQuery()) 
+            boolean est=rs.getBoolean("ESTADO");
+            if(rs.wasNull()) s.setEstado(null);else s.setEstado(est);
+        }catch(SQLException e) { s.setEstado(null);}
+
+        try 
+        {
+            boolean pd=rs.getBoolean("POR_DEFECTO");
+            if(rs.wasNull()) s.setPorDefecto(null);else s.setPorDefecto(pd);
+        }catch(SQLException e){s.setPorDefecto(null);}
+
+        try{s.setTipoCategoria(rs.getString("TIPO_DE_CATEGORIA"));}catch(SQLException e){s.setTipoCategoria(null);}
+        try{s.setCategoriaNombre(rs.getString("CATEGORIA_NOMBRE"));}catch(SQLException e){s.setCategoriaNombre(null);}
+
+        try{s.setCreadoEn(rs.getTimestamp("CREADO_EN"));}catch(SQLException e){s.setCreadoEn(null);}
+        try{s.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));}catch(SQLException e){s.setModificadoEn(null); }
+        try{s.setCreadoPor(rs.getString("CREADO_POR"));}catch(SQLException e){s.setCreadoPor(null);}
+        try{s.setModificadoPor(rs.getString("MODIFICADO_POR"));}catch(SQLException e){s.setModificadoPor(null); }
+
+        return s;
+    }
+    public void InsertarPresupuesto(long idUsuario,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro,String creadoPor)throws SQLException
+    {
+        
+        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?,?) }";
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
+        {
+            
+            cs.setLong(1, idUsuario);
+            cs.setString(2, nombreDescriptivo);
+            cs.setInt(3, anioInicio);
+            cs.setInt(4, mesInicio);
+            cs.setInt(5, anioFin);
+            cs.setInt(6, mesFin);
+            
+            if(totalIngresos==null)cs.setNull(7, java.sql.Types.DECIMAL);else cs.setBigDecimal(7, totalIngresos);
+            if(totalGastos==null)cs.setNull(8, java.sql.Types.DECIMAL);else cs.setBigDecimal(8, totalGastos);
+            if(totalAhorro==null)cs.setNull(9, java.sql.Types.DECIMAL);else cs.setBigDecimal(9, totalAhorro);
+            if(creadoPor==null)cs.setNull(10, java.sql.Types.VARCHAR);else cs.setString(10, creadoPor);
+            
+            cs.execute();
+
+
+        }catch(SQLException ex){
+            
+            if("45000".equals(ex.getSQLState())) 
             {
-                if(!rs.next()) 
+                System.err.println("BD controlada (insertar presupuesto): "+ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+        
+    }
+    public void ActualizarPresupuesto(long idPresupuesto,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro,String modificadoPor)throws SQLException
+    {
+        
+        String SQL="{ CALL SP_ACTUALIZAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?,?) }";
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
+        {
+             
+            cs.setLong(1, idPresupuesto);
+            cs.setString(2, nombreDescriptivo);
+            cs.setInt(3, anioInicio);
+            cs.setInt(4, mesInicio);
+            cs.setInt(5, anioFin);
+            cs.setInt(6, mesFin);
+
+            if(totalIngresos==null)cs.setNull(7, java.sql.Types.DECIMAL);else cs.setBigDecimal(7, totalIngresos);
+            if(totalGastos==null)cs.setNull(8, java.sql.Types.DECIMAL);else cs.setBigDecimal(8, totalGastos);
+            if(totalAhorro==null)cs.setNull(9, java.sql.Types.DECIMAL);else cs.setBigDecimal(9, totalAhorro);
+
+            if(modificadoPor==null)cs.setNull(10, java.sql.Types.VARCHAR);else cs.setString(10, modificadoPor);
+            
+            cs.execute();
+             
+        }catch(SQLException ex){
+            
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (actualizar presupuesto): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+        
+    }
+    public boolean EliminarPresupuesto(long idPresupuesto)throws SQLException 
+    {
+        String SQL="{ CALL SP_ELIMINAR_PRESUPUESTO(?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idPresupuesto);
+            cs.execute();
+            return true;
+        }catch(SQLException ex){
+            String sqlState=ex.getSQLState();
+            if("45000".equals(sqlState)) 
+            {
+                System.err.println("BD controlada (eliminar presupuesto): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public Presupuesto ConsultarPresupuesto(long idPresupuesto)throws SQLException 
+    {
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_PRESUPUESTO(?))";
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idPresupuesto);
+            try(ResultSet rs = ps.executeQuery()) 
+            {
+                if(rs.next()) 
                 {
+                    return mapearPresupuesto(rs);
+                    
+                }else{
                     
                     return null;
                     
                 }
-                LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
-                fila.put("id_obligacion", rs.getLong("Id_obligacion_fija"));
-                fila.put("id_usuario", rs.getLong("Id_usuario"));
-                fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                fila.put("nombre", rs.getString("Nombre"));
-                fila.put("descripcion", rs.getString("Descripcion_detallada"));
-                fila.put("monto", rs.getBigDecimal("Monto_fijo_mensual"));
-                fila.put("dia_vencimiento", rs.getInt("Dia_del_mes_de_vencimiento"));
-                fila.put("esta_vigente", rs.getBoolean("Esta_vigente"));
-                fila.put("fecha_inicio", rs.getDate("Fecha_inicio_de_la_obligacion"));
-                fila.put("fecha_fin", rs.getDate("Fecha_de_finalizacion"));
-                fila.put("nombre_subcategoria", rs.getString("Nombre_subcategoria"));
-                fila.put("nombre_categoria", rs.getString("Nombre_categoria"));
-                fila.put("tipo_de_categoria", rs.getString("Tipo_de_categoria"));
-                return fila;
             }
+        }catch (SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (consultar presupuesto): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
         }
     }
-    // Inserta una transaccion usando SP_INSERTAR_TRANSACCION
-    //                                                                                                      nullable
+    private Presupuesto mapearPresupuesto(ResultSet rs)throws SQLException 
+    {
+        Presupuesto p=new Presupuesto();
 
-    public void insertarTransaccion(long idUsuario,long idPresupuesto,int anio,int mes,long idSubcategoria,Long idObligacion,String tipo,String descripcion, BigDecimal monto,java.sql.Date fecha,String metodoPago,String creadoPor) throws SQLException 
+        // id
+        long id=rs.getLong("ID_PRESUPUESTO");
+        if(rs.wasNull()) 
+        {
+            p.setId(null);
+        }else{
+            
+            p.setId(id);
+            
+        }
+
+        // idUsuario
+        try
+        {
+            long idUsr=rs.getLong("ID_USUARIO");
+            if(rs.wasNull()) 
+            {
+                p.setIdUsuario(null);
+            }else{
+                p.setIdUsuario(idUsr);
+            }
+        }catch(SQLException e) {
+            p.setIdUsuario(null);
+        }
+
+        try 
+        {
+            
+            p.setNombreDescriptivo(rs.getString("NOMBRE_DESCRIPTIVO"));
+            
+        }catch(SQLException e){
+            
+            p.setNombreDescriptivo(null);
+            
+        }
+
+        try 
+        {
+            int ai=rs.getInt("ANIO_DE_INICIO");
+            if(rs.wasNull()) 
+            {
+                
+                p.setAnioInicio(null);
+                
+            }else{
+                
+                p.setAnioInicio(ai);
+                
+            }
+        }catch(SQLException e){
+            
+            p.setAnioInicio(null);
+            
+        }
+        try 
+        {
+            int mi=rs.getInt("MES_DE_INICIO");
+            if(rs.wasNull()) 
+            {
+                p.setMesInicio(null);
+            }else{
+                p.setMesInicio(mi);
+            }
+        }catch (SQLException e){
+            p.setMesInicio(null);
+        }
+        try 
+        {
+            int af=rs.getInt("ANIO_DE_FIN");
+            if(rs.wasNull())
+            {
+                p.setAnioFin(null);
+            }else{
+                p.setAnioFin(af);
+            }
+        }catch (SQLException e){
+            p.setAnioFin(null);
+        }
+        try 
+        {
+            int mf=rs.getInt("MES_DE_FIN");
+            if(rs.wasNull()) 
+            {
+                p.setMesFin(null);
+            }else{
+                p.setMesFin(mf);
+            }
+        }catch (SQLException e){
+            p.setMesFin(null);
+        }
+
+        try 
+        {
+            p.setTotalIngresos(rs.getBigDecimal("TOTAL_DE_INGRESOS"));
+        }catch (SQLException e){
+            p.setTotalIngresos(null);
+        }
+        try 
+        {
+            p.setTotalGastos(rs.getBigDecimal("TOTAL_DE_GASTOS"));
+        }catch(SQLException e){
+            p.setTotalGastos(null);
+        }
+        try 
+        {
+            p.setTotalAhorro(rs.getBigDecimal("TOTAL_DE_AHORRO"));
+        }catch (SQLException e){
+            p.setTotalAhorro(null);
+        }
+
+        try 
+        {
+            p.setFechaHoraCreacion(rs.getTimestamp("FECHA_HORA_CREACION"));
+        }catch (SQLException e){
+            p.setFechaHoraCreacion(null);
+        }
+        try 
+        {
+            p.setEstado(rs.getString("ESTADO_PRESUPUESTO"));
+        }catch (SQLException e){
+            p.setEstado(null);
+        }
+        try 
+        {
+            p.setCreadoEn(rs.getTimestamp("CREADO_EN"));
+        }catch (SQLException e){
+            p.setCreadoEn(null);
+        }
+        try 
+        {
+            p.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));
+        }catch (SQLException e){
+            p.setModificadoEn(null);
+        }
+        try 
+        {
+            p.setCreadoPor(rs.getString("CREADO_POR"));
+        }catch (SQLException e){
+            p.setCreadoPor(null);
+        }
+        try 
+        {
+            p.setModificadoPor(rs.getString("MODIFICADO_POR"));
+        }catch (SQLException e){
+            p.setModificadoPor(null);
+        }
+
+        return p;
+    }
+    public void InsertarPresupuestoDetalle(long idPresupuesto,long idSubcategoria,java.math.BigDecimal montoMensual,String justificacion,String creadoPor)throws SQLException
+    {
+        
+        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO_DETALLE(?,?,?,?,?) }";
+        
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
+        {
+            
+            cs.setLong(1, idPresupuesto);
+            cs.setLong(2, idSubcategoria);
+            if(montoMensual==null) cs.setNull(3, java.sql.Types.DECIMAL);else cs.setBigDecimal(3, montoMensual);
+            if(justificacion== null) cs.setNull(4, java.sql.Types.VARCHAR);else cs.setString(4, justificacion);
+            if(creadoPor ==null) cs.setNull(5, java.sql.Types.VARCHAR);else cs.setString(5, creadoPor);
+            
+            cs.execute();
+            
+        }catch (SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (insertar detalle): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+        
+    }
+    public void ActualizarPresupuestoDetalle(long idDetalle,java.math.BigDecimal montoMensual,String justificacion,String modificadoPor)throws SQLException 
+    {
+        String SQL = "{ CALL SP_ACTUALIZAR_PRESUPUESTO_DETALLE(?,?,?,?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idDetalle);
+            if(montoMensual ==null)
+            {
+                cs.setNull(2, java.sql.Types.DECIMAL);
+            }else{
+                cs.setBigDecimal(2, montoMensual);
+            }
+            if(justificacion ==null) 
+            {
+                cs.setNull(3, java.sql.Types.VARCHAR);
+            }else{
+                cs.setString(3, justificacion);
+            }
+            if(modificadoPor==null) 
+            {
+                cs.setNull(4, java.sql.Types.VARCHAR);
+            }else{
+                cs.setString(4, modificadoPor);
+            }
+
+            cs.execute();
+        }catch (SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (actualizar detalle): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public boolean EliminarPresupuestoDetalle(long idDetalle)throws SQLException 
+    {
+        String SQL="{ CALL SP_ELIMINAR_PRESUPUESTO_DETALLE(?) }";
+        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idDetalle);
+            cs.execute();
+            
+            return true;
+        }catch (SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (eliminar detalle): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public Presupuesto_detalle ConsultarPresupuestoDetalle(long idDetalle)throws SQLException 
+    {
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_PRESUPUESTO_DETALLE(?))";
+        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idDetalle);
+            try(ResultSet rs =ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    return mapearPresupuestoDetalle(rs);
+                }else{
+                    return null;
+                }
+            }
+        }catch (SQLException ex){
+            if("45000".equals(ex.getSQLState())) 
+            {
+                System.err.println("BD controlada (consultar detalle): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public List<Presupuesto_detalle>ListarDetallesPresupuesto(long idPresupuesto)throws SQLException 
+    {
+        List<Presupuesto_detalle>lista =new ArrayList<>();
+        String SQL="SELECT * FROM TABLE(SP_LISTAR_DETALLES_PRESUPUESTO(?))";
+        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idPresupuesto);
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    lista.add(mapearPresupuestoDetalle(rs));
+                }
+            }
+        }
+        return lista;
+    }
+    private Presupuesto_detalle mapearPresupuestoDetalle(ResultSet rs)throws SQLException 
+    {
+        Presupuesto_detalle pd=new Presupuesto_detalle();
+
+        try{long id=rs.getLong("ID_PRESUPUESTO_DETALLE");if(rs.wasNull()) pd.setId(null);else pd.setId(id);}catch(SQLException e){pd.setId(null);}
+        try{long ip=rs.getLong("ID_PRESUPUESTO");if(rs.wasNull()) pd.setIdPresupuesto(null);else pd.setIdPresupuesto(ip); }catch(SQLException e){pd.setIdPresupuesto(null);}
+        try{long is=rs.getLong("ID_SUBCATEGORIA");if(rs.wasNull()) pd.setIdSubcategoria(null);else pd.setIdSubcategoria(is);}catch(SQLException e){pd.setIdSubcategoria(null);}
+
+        try{pd.setNombreSubcategoria(rs.getString("NOMBRE_SUBCATEGORIA"));}catch(SQLException e){pd.setNombreSubcategoria(null);}
+        try{long ic=rs.getLong("ID_CATEGORIA");if(rs.wasNull()) pd.setIdCategoria(null);else pd.setIdCategoria(ic);}catch(SQLException e){pd.setIdCategoria(null);}
+        try{pd.setNombreCategoria(rs.getString("NOMBRE_CATEGORIA"));}catch(SQLException e){pd.setNombreCategoria(null); }
+
+        try{pd.setMontoMensual(rs.getBigDecimal("MONTO_MENSUAL"));}catch(SQLException e) { pd.setMontoMensual(null);}
+        try{pd.setJustificacion(rs.getString("JUSTIFICACION_DEL_MONTO"));}catch(SQLException e) { pd.setJustificacion(null);}
+
+        try{pd.setCreadoEn(rs.getTimestamp("CREADO_EN")); }catch(SQLException e){pd.setCreadoEn(null);}
+        try{pd.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));} catch(SQLException e){pd.setModificadoEn(null);}
+        try{pd.setCreadoPor(rs.getString("CREADO_POR")); }catch(SQLException e){pd.setCreadoPor(null);}
+        try{pd.setModificadoPor(rs.getString("MODIFICADO_POR"));}catch(SQLException e){pd.setModificadoPor(null);}
+
+        return pd;
+    }
+    public void InsertarObligacion(long idUsuario,long idSubcategoria,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaInicio,java.sql.Date fechaFin,String creadoPor) throws SQLException 
+    {
+        
+       String SQL = "{ CALL SP_INSERTAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?, ?, ?) }";
+    try(Connection con = ConexionBD.getConnection();CallableStatement cs = con.prepareCall(SQL)) 
     {
 
-        String SQL = "{ CALL PUBLIC.SP_INSERTAR_TRANSACCION(?,?,?,?,?,?,?,?,?,?,?,?) }"; // 12 placeholders
-        try (Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) {
+        cs.setLong(1, idUsuario);
+        cs.setLong(2, idSubcategoria);
+        cs.setString(3, nombre);
+        cs.setString(4, descripcion);
+        if (monto == null) cs.setNull(5, java.sql.Types.DECIMAL); else cs.setBigDecimal(5, monto);
+        cs.setInt(6, diaVencimiento);
+        if (fechaInicio == null) cs.setNull(7, java.sql.Types.DATE); else cs.setDate(7, fechaInicio);
+        if (fechaFin == null) cs.setNull(8, java.sql.Types.DATE); else cs.setDate(8, fechaFin);
+        if (creadoPor == null) cs.setNull(9, java.sql.Types.VARCHAR); else cs.setString(9, creadoPor);
 
+        cs.execute();
+    } catch (SQLException ex) {
+        if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (insertar obligacion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public void ActualizarObligacion(long idObligacion,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaFin,Boolean activo,String modificadoPor) throws SQLException
+    {
+        
+        String SQL="{ CALL SP_ACTUALIZAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?, ?) }";
+        try(Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idObligacion);
+            cs.setString(2, nombre);
+            cs.setString(3, descripcion);
+            if(monto == null) cs.setNull(4, java.sql.Types.DECIMAL); else cs.setBigDecimal(4, monto);
+            cs.setInt(5, diaVencimiento);
+            if(fechaFin == null) cs.setNull(6, java.sql.Types.DATE); else cs.setDate(6, fechaFin);
+            if(activo == null) cs.setNull(7, java.sql.Types.BOOLEAN); else cs.setBoolean(7, activo);
+            if(modificadoPor == null) cs.setNull(8, java.sql.Types.VARCHAR); else cs.setString(8, modificadoPor);
+
+            cs.execute();
+        } catch (SQLException ex) {
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (actualizar obligacion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public boolean EliminarObligacion(long idObligacion) throws SQLException 
+    {
+        
+        String SQL="{ CALL SP_ELIMINAR_OBLIGACION(?) }";
+        try(Connection con=ConexionBD.getConnection();CallableStatement cs = con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idObligacion);
+            cs.execute();
+            return true;
+        } catch (SQLException ex) {
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (eliminar obligacion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public ObligacionFija ConsultarObligacion(long idObligacion) throws SQLException 
+    {
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_OBLIGACION(?))";
+        try(Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idObligacion);
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    return mapearObligacionFija(rs);
+                }else return null;
+            }
+        } catch (SQLException ex) {
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (consultar obligacion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public List<ObligacionFija>ListarObligacionesUsuario(long idUsuario, Boolean activo) throws SQLException 
+    {
+        List<ObligacionFija>lista=new ArrayList<>();
+        String SQL="SELECT * FROM TABLE(SP_LISTAR_OBLIGACIONES_USUARIO(?, ?))";
+        try(Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idUsuario);
+            if(activo==null) ps.setNull(2, java.sql.Types.BOOLEAN); else ps.setBoolean(2, activo);
+
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    lista.add(mapearObligacionFija(rs));
+                }
+            }
+        }
+        return lista;
+    }
+    private ObligacionFija mapearObligacionFija(ResultSet rs) throws SQLException
+    {
+        ObligacionFija o=new ObligacionFija();
+        try{long id=rs.getLong("ID_OBLIGACION_FIJA"); if (rs.wasNull()) o.setId(null); else o.setId(id); } catch (SQLException e) { o.setId(null); }
+        try{long uid= rs.getLong("ID_USUARIO"); if (rs.wasNull()) o.setIdUsuario(null); else o.setIdUsuario(uid); } catch (SQLException e) { o.setIdUsuario(null); }
+        try{long sid= rs.getLong("ID_SUBCATEGORIA"); if (rs.wasNull()) o.setIdSubcategoria(null); else o.setIdSubcategoria(sid); } catch (SQLException e) { o.setIdSubcategoria(null); }
+
+        try{o.setNombre(rs.getString("NOMBRE")); } catch (SQLException e) { o.setNombre(null); }
+        try{o.setDescripcion(rs.getString("DESCRIPCION_DETALLADA")); } catch (SQLException e) { o.setDescripcion(null); }
+        try{o.setMontoMensual(rs.getBigDecimal("MONTO_FIJO_MENSUAL")); } catch (SQLException e) { o.setMontoMensual(null); }
+        try{int dv=rs.getInt("DIA_DEL_MES_DE_VENCIMIENTO"); if (rs.wasNull()) o.setDiaVencimiento(null); else o.setDiaVencimiento(dv); } catch (SQLException e) { o.setDiaVencimiento(null); }
+        try{boolean ev=rs.getBoolean("ESTA_VIGENTE"); if (rs.wasNull()) o.setEstaVigente(null); else o.setEstaVigente(ev); } catch (SQLException e) { o.setEstaVigente(null); }
+        try{o.setFechaInicio(rs.getDate("FECHA_INICIO_DE_LA_OBLIGACION")); } catch (SQLException e) { o.setFechaInicio(null); }
+        try{o.setFechaFin(rs.getDate("FECHA_DE_FINALIZACION")); } catch (SQLException e) { o.setFechaFin(null); }
+
+        try{o.setNombreSubcategoria(rs.getString("NOMBRE_SUBCATEGORIA")); } catch (SQLException e) { o.setNombreSubcategoria(null); }
+        try{long cid=rs.getLong("ID_CATEGORIA"); if (rs.wasNull()) o.setIdCategoria(null); else o.setIdCategoria(cid); } catch (SQLException e) { o.setIdCategoria(null); }
+        try{o.setNombreCategoria(rs.getString("NOMBRE_CATEGORIA")); } catch (SQLException e) { o.setNombreCategoria(null); }
+
+        try{o.setCreadoEn(rs.getTimestamp("CREADO_EN")); } catch (SQLException e) { o.setCreadoEn(null); }
+        try{o.setModificadoEn(rs.getTimestamp("MODIFICADO_EN")); } catch (SQLException e) { o.setModificadoEn(null); }
+        try{o.setCreadoPor(rs.getString("CREADO_POR")); } catch (SQLException e) { o.setCreadoPor(null); }
+        try{o.setModificadoPor(rs.getString("MODIFICADO_POR")); } catch (SQLException e) { o.setModificadoPor(null); }
+
+        return o;
+    }
+    //                                                                                  puede ser null
+    public void InsertarTransaccion(long idUsuario,long idPresupuesto,int anio,int mes,long idSubcategoria,Long idObligacion,String tipo,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String creadoPor)throws SQLException 
+    {
+        
+        String SQL="{ CALL SP_INSERTAR_TRANSACCION(?,?,?,?,?,?,?,?,?,?,?,?) }";
+        
+        try(Connection con = ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
+        {
+            
             cs.setLong(1, idUsuario);
             cs.setLong(2, idPresupuesto);
             cs.setInt(3, anio);
             cs.setInt(4, mes);
             cs.setLong(5, idSubcategoria);
 
-            if(idObligacion!=null) 
-            {
-                
-                cs.setLong(6, idObligacion);
-                
-            }else{
-                
-                cs.setNull(6, java.sql.Types.BIGINT);
-                
-            }
+            if(idObligacion == null) cs.setNull(6, Types.BIGINT);
+            else cs.setLong(6, idObligacion);
 
             cs.setString(7, tipo);
-            cs.setString(8, descripcion);
+            if(descripcion == null) cs.setNull(8, Types.VARCHAR);
+            else cs.setString(8, descripcion);
+
             cs.setBigDecimal(9, monto);
             cs.setDate(10, fecha);
             cs.setString(11, metodoPago);
-            cs.setString(12, creadoPor); 
+            if(creadoPor == null) cs.setNull(12, Types.VARCHAR);
+            else cs.setString(12, creadoPor);
 
             cs.execute();
-            System.out.println("SP_INSERTAR_TRANSACCION: executed (verifica si se inserto).");
+            
+        }catch (SQLException ex){
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (insert transaccion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
         }
+        
     }
-
-
-    // Actualiza una transaccion (SP_ACTUALIZAR_TRANSACCION)
-    public void actualizarTransaccion(long idTransaccion,int anio,int mes,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String modificadoPor) throws SQLException 
+    public void ActualizarTransaccion(long idTransaccion,int anio,int mes,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String modificadoPor) throws SQLException 
     {
-        String SQL="{ CALL PUBLIC.SP_ACTUALIZAR_TRANSACCION(?,?,?,?,?,?,?,?) }";
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        
+        String SQL="{ CALL SP_ACTUALIZAR_TRANSACCION(?,?,?,?,?,?,?,?) }";
+        
+        try(Connection con = ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
-
+            
             cs.setLong(1, idTransaccion);
             cs.setInt(2, anio);
             cs.setInt(3, mes);
-            cs.setString(4, descripcion);
+            if(descripcion==null) cs.setNull(4, Types.VARCHAR);
+            else cs.setString(4, descripcion);
+
             cs.setBigDecimal(5, monto);
             cs.setDate(6, fecha);
             cs.setString(7, metodoPago);
-            cs.setString(8, modificadoPor);
 
-            int updated=cs.executeUpdate();
-            System.out.println("SP_ACTUALIZAR_TRANSACCION -> filas afectadas: " + updated);
+            if(modificadoPor==null) cs.setNull(8, Types.VARCHAR);
+            else cs.setString(8, modificadoPor);
+
+            cs.execute();
+            
+        }catch (SQLException ex){
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (actualizar transaccion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
         }
+        
     }
-
-    // Elimina (borra) una transacción (SP_ELIMINAR_TRANSACCION)
-    public void eliminarTransaccion(long idTransaccion) throws SQLException 
+    public boolean EliminarTransaccion(long idTransaccion) throws SQLException 
     {
-        String SQL="{ CALL PUBLIC.SP_ELIMINAR_TRANSACCION(?) }";
-        try(Connection con=ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        
+        String SQL="{ CALL SP_ELIMINAR_TRANSACCION(?) }";
+        try(Connection con = ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
         {
-
+            
             cs.setLong(1, idTransaccion);
-            int deleted=cs.executeUpdate();
-            System.out.println("SP_ELIMINAR_TRANSACCION -> filas afectadas: "+deleted);
+            cs.execute();
+            return true;
+            
+        }catch (SQLException ex){
+            
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (eliminar transaccion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
         }
     }
-
-    // Lista transacciones por presupuesto (informacion básica)
-    public List<LinkedHashMap<String, Object>> listarTransaccionesPorPresupuesto(long idPresupuesto) throws SQLException 
+    public Transaccion ConsultarTransaccion(long idTransaccion) throws SQLException 
     {
-        String SQL="SELECT t.Id_transaccion, t.Id_usuario, t.Id_presupuesto, t.Anio, t.Mes, t.Id_subcategoria, "
-                +"t.Id_obligacion_fija, t.Tipo_de_transaccion, t.Descripcion, t.Monto, t.Fecha, t.Metodo_de_pago, t.Fecha_hora_de_registro "
-                +"FROM PUBLIC.TRANSACCION t WHERE t.Id_presupuesto = ? ORDER BY t.Id_transaccion";
-
-        List<LinkedHashMap<String, Object>> lista = new ArrayList<>();
-        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_TRANSACCION(?))";
+        try(Connection con=ConexionBD.getConnection(); PreparedStatement ps = con.prepareStatement(SQL)) 
         {
-            ps.setLong(1, idPresupuesto);
+            ps.setLong(1, idTransaccion);
             try(ResultSet rs=ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    
+                    return mapearTransaccion(rs);
+                    
+                }else{
+                    
+                    return null;
+                }
+            }
+        }catch (SQLException ex){
+            
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (consult transaccion): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+            
+        }
+    }
+    public List<Transaccion> ListarTransaccionesPresupuesto(long idPresupuesto, Integer anio, Integer mes, String tipo) throws SQLException 
+    {
+        List<Transaccion>lista=new ArrayList<>();
+        String SQL="SELECT * FROM TABLE(SP_LISTAR_TRANSACCIONES_PRESUPUESTO(?, ?, ?, ?))";
+        try(Connection con =ConexionBD.getConnection(); PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
+            ps.setLong(1,idPresupuesto);
+            if(anio ==null) 
+            {
+                ps.setNull(2, java.sql.Types.SMALLINT);
+            }else{
+                ps.setInt(2, anio);
+            }
+            if(mes ==null) 
+            {
+                ps.setNull(3, java.sql.Types.SMALLINT);
+            }else{
+                ps.setInt(3, mes);
+            }
+            if(tipo ==null) 
+            {
+                ps.setNull(4, java.sql.Types.VARCHAR);
+            }else{
+                ps.setString(4, tipo);
+            }
+
+            try(ResultSet rs =ps.executeQuery()) 
             {
                 while(rs.next()) 
                 {
-                    LinkedHashMap<String, Object> fila=new LinkedHashMap<>();
-                    fila.put("id_transaccion", rs.getLong("Id_transaccion"));
-                    fila.put("id_usuario", rs.getLong("Id_usuario"));
-                    fila.put("id_presupuesto", rs.getLong("Id_presupuesto"));
-                    fila.put("anio", rs.getInt("Anio"));
-                    fila.put("mes", rs.getInt("Mes"));
-                    fila.put("id_subcategoria", rs.getLong("Id_subcategoria"));
-                    fila.put("id_obligacion", rs.getObject("Id_obligacion_fija") != null ? rs.getLong("Id_obligacion_fija") : null);
-                    fila.put("tipo", rs.getString("Tipo_de_transaccion"));
-                    fila.put("descripcion", rs.getString("Descripcion"));
-                    fila.put("monto", rs.getBigDecimal("Monto"));
-                    fila.put("fecha", rs.getDate("Fecha"));
-                    fila.put("metodo_pago", rs.getString("Metodo_de_pago"));
-                    fila.put("fecha_hora_registro", rs.getTimestamp("Fecha_hora_de_registro"));
-                    lista.add(fila);
+                    lista.add(mapearTransaccion(rs));
                 }
             }
         }
         return lista;
     }
-
-
-
-    private static String interpretarSQLException(SQLException ex) {
-        String sqlState = ex.getSQLState();
-        int code = ex.getErrorCode();
-        String mensaje = ex.getMessage();
-
-        
-        if (mensaje != null && mensaje.toLowerCase().contains("unique") || mensaje.toLowerCase().contains("duplicate")) {
-            return "Violación de restricción: ya existe un registro duplicado (clave única).";
-        }
-        if (mensaje != null && mensaje.toLowerCase().contains("referential") || mensaje.toLowerCase().contains("foreign key")) {
-            return "Violación de llave foránea: recurso relacionado no existe (FK). Verificar Id_presupuesto o Id_subcategoria.";
-        }
-        // Mensaje por defecto
-        return "Error SQL (código " + code + ", sqlstate " + sqlState + "): " + mensaje;
-    }
-
-
-    
-//por si acaso
-    public void cerrarBaseDeDatos() throws SQLException
+    private Transaccion mapearTransaccion(ResultSet rs) throws SQLException
     {
-        try(Connection cn=ConexionBD.getConnection(); java.sql.Statement st=cn.createStatement()) 
-        {
-            st.execute("SHUTDOWN");
-            System.out.println("BD cerrada con SHUTDOWN.");
-        }
-    }
-
-
-    public void hacerCheckpoint()throws SQLException 
-    {
-        try(Connection cn=ConexionBD.getConnection(); java.sql.Statement st=cn.createStatement()) 
-        {
-            
-            st.execute("CHECKPOINT");
-            System.out.println("\nCHECKPOINT ejecutado (cambios guardados en disco).");
-            
-        }
-    }
-    
-    
-//PRUEBAZZZZZ AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII=========================================================
-  public static void main(String[] args) 
-    {
-        Puente_Sql_Java dao=new Puente_Sql_Java();
-
+        Transaccion t =new Transaccion();
         try 
         {
-            dao.cerrarBaseDeDatos();
-            long idDetalle = 1L;
-            long idUsuario = 1L;
-            long idSubcategoria = 1L;
-            long idPresupuesto = 1L;
-            int anio = 2025;
-            int mes = 11;
-            Long idObligacion = null; // sin obligación vinculada
-            String tipo = "gasto"; // debe coincidir con el tipo de la categoria padre
-            String descripcion = "Compra supermercado - prueba Java";
-            BigDecimal monto = new BigDecimal("1200.00");
-            LocalDate fechaLocal = LocalDate.of(2025, 11, 15);
-            java.sql.Date fecha = java.sql.Date.valueOf(fechaLocal);
-            String metodoPago = "efectivo";
-            String creadoPor = "ROYY";
-
-            System.out.println("\n==========USUARIOS ACTUALES==========");
-            for(var fila:dao.listarUsuarios())
-            {
-                
-                System.out.println(fila);
-                
-            }
+            t.setId(rs.getLong("ID_TRANSACCION"));
+        }catch (SQLException e) {
             
-            System.out.println("\n\n=====MOSTRANDO CATEGORIAS============");
-            for(var fila:dao.listarCategorias(1L,"gasto"))
-            {
-                
-                System.out.println(fila);
-                
-            }
-            System.out.println("\n\n=====MOSTRANDO SUBCATEGORIAS============");
-            for(var fila:dao.listarSubcategoriasPorCategoria(1L))
-            {
-                
-                System.out.println(fila);
-                
-            }
-            for(var fila:dao.listarPresupuestoPorUsuario(1L,"activo"))
-            {
-                
-                System.out.println(fila);
-                
-            }
-            System.out.println("\n\n=====LISTA DE PRESUPUESTOS_DETALLE");
-            List<LinkedHashMap<String, Object>> detalles=dao.listarDetallesPresupuesto(1L); // usa el id_presupuesto correcto
-            if(detalles.isEmpty()) 
-            {
-                System.out.println("No se encontraron detalles para el presupuesto "+1L);
-            }else{
-                
-                for(var d : detalles) 
-                {
-                    
-                    System.out.println(d);
-                    
-                }
-                
-            }
-            
-            List<LinkedHashMap<String, Object>> lista=dao.listarObligacionesPorUsuario(idUsuario);
-            System.out.println("\n\n===== OBLIGACIONES DEL USUARIO "+ idUsuario+" =====");
-            for (var fila : lista) 
-            {
-                
-                System.out.println(fila);
-            }
-            
-            dao.insertarTransaccion(idUsuario, idPresupuesto, anio, mes, idSubcategoria, idObligacion,
-                    tipo, descripcion, monto, fecha, metodoPago, creadoPor);
-            
-            // --- 2) Listado de transacciones para el presupuesto ---
-            System.out.println("\n=== LISTANDO TRANSACCIONES PARA PRESUPUESTO " + idPresupuesto + " ===");
-            List<LinkedHashMap<String, Object>> list = dao.listarTransaccionesPorPresupuesto(idPresupuesto);
-            if(list.isEmpty()) 
-            {
-                
-                System.out.println("No hay transacciones. (Si no se insertó, revisa las validaciones del SP)");
-                
-            }else{
-                for(var fila:list) 
-                {
-                    
-                    System.out.println(fila);
-                    
-                }
-            }
-
-
-
-            //para guardar en disco
-            dao.hacerCheckpoint();
-            
-
-        } catch (SQLException e) {
-
-            e.printStackTrace();
-
+            t.setId(0L);
         }
+        try 
+        {
+            t.setIdUsuario(rs.getLong("ID_USUARIO"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setIdPresupuesto(rs.getLong("ID_PRESUPUESTO"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setAnio(rs.getShort("ANIO"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setMes(rs.getShort("MES"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            t.setIdSubcategoria(rs.getLong("ID_SUBCATEGORIA"));
+        } catch (SQLException e) {
+        }
+        
+        try 
+        {
+            long tmpOb =rs.getLong("ID_OBLIGACION_FIJA");
+            if(rs.wasNull()) 
+            {
+                t.setIdObligacionFija(null);
+            }else {
+                t.setIdObligacionFija(tmpOb);
+            }
+        } catch (SQLException e) {
+            t.setIdObligacionFija(null);
+        }
+        try
+        {
+            t.setTipo(rs.getString("TIPO_DE_TRANSACCION"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setDescripcion(rs.getString("DESCRIPCION"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setMonto(rs.getBigDecimal("MONTO"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setFecha(rs.getDate("FECHA"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            t.setMetodoPago(rs.getString("METODO_DE_PAGO"));
+        } catch (SQLException e) {
+        }
+        try {
+            t.setFechaHoraRegistro(rs.getTimestamp("FECHA_HORA_DE_REGISTRO"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            t.setCreadoEn(rs.getTimestamp("CREADO_EN"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setCreadoPor(rs.getString("CREADO_POR"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setModificadoPor(rs.getString("MODIFICADO_POR"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setNombreSubcategoria(rs.getString("NOMBRE_SUBCATEGORIA"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setIdCategoria(rs.getLong("ID_CATEGORIA"));
+            if (rs.wasNull()) {
+                t.setIdCategoria(null);
+            }
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            t.setNombreCategoria(rs.getString("NOMBRE_CATEGORIA"));
+        } catch (SQLException e) {
+        }
+        return t;
     }
+
+    
+    
+
+    
+    
 
 }

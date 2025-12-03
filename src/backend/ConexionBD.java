@@ -27,8 +27,8 @@ la ruta del archivo , el usuario o la contrasenia, solo se modifica aqui
 public class ConexionBD
 {
     
-    //===Configuración centralizada===
-    private static final String URL="jdbc:hsqldb:file:C:/Users/royum/OneDrive/Documentos/NetBeansProjects/Proyecto_Teo1/database/data/presupuesto_db";
+    
+    private static final String URL="jdbc:hsqldb:hsql://localhost:9001/presupuesto_db";
     private static final String USUARIO="SA";     
     private static final String PASSWORD="";  
 

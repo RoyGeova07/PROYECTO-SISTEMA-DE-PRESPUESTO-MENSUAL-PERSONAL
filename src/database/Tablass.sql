@@ -1,22 +1,3 @@
-/* 
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Other/SQLTemplate.sql to edit this template
- */
-/**
- * Author:  royum
- * Created: 31 oct 2025
- */
-
---BORRAR DE HIJAS A PADRES
-drop table if exists TRANSACCION;
-drop table if exists META_AHORRO;
-drop table if exists OBLIGACION_FIJA;
-drop table if exists PRESUPUESTO_DETALLE;
-drop table if exists SUBCATEGORIA;
-drop table if exists CATEGORIA;
-drop table if exists PRESUPUESTO;
-drop table if exists USUARIOS;
-
 --TABLAS CON SUS ATRIBUTOS
 create table USUARIOS 
 (
@@ -193,6 +174,7 @@ create table META_AHORRO
     
 );
 
+
 --RELACIONES
 alter table PRESUPUESTO add constraint fk_presupuesto_usuario foreign key(Id_usuario)references USUARIOS(Id_usuario);
 
@@ -208,7 +190,7 @@ alter table PRESUPUESTO_DETALLE add constraint fk_pdet_presupuesto foreign key(I
 
 alter table PRESUPUESTO_DETALLE add constraint fk_presupuesto_subcategoria foreign key(Id_subcategoria)references SUBCATEGORIA(Id_subcategoria);
 
--- se asegura que el lado de obligacion fija tiene 1 subcategoria 
+--se asegura que el lado de obligacion fija tiene 1 subcategoria 
 alter table OBLIGACION_FIJA add constraint fk_obligacion_subcategoria foreign key(Id_subcategoria)references SUBCATEGORIA(Id_subcategoria);
 
 --relacion 1:1 OBLIGACION_FIJA <-> SUBCATEGORIA
@@ -277,15 +259,4 @@ alter table PRESUPUESTO
         );
 
 
--- SET REFERENTIAL_INTEGRITY FALSE;
--- 
--- TRUNCATE TABLE PRESUPUESTO_DETALLE;
--- TRUNCATE TABLE PRESUPUESTO;
--- TRUNCATE TABLE META_AHORRO;
--- TRUNCATE TABLE OBLIGACION_FIJA;
--- TRUNCATE TABLE TRANSACCION;
--- TRUNCATE TABLE SUBCATEGORIA;
--- TRUNCATE TABLE CATEGORIA;
--- TRUNCATE TABLE USUARIOS;
--- 
--- SET REFERENTIAL_INTEGRITY TRUE;
+
