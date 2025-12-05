@@ -326,7 +326,7 @@ ALTER TABLE META_AHORRO ALTER COLUMN Estado SET DATA TYPE VARCHAR(20);
 	
 
 	
-	
+            
 	
 	
 	

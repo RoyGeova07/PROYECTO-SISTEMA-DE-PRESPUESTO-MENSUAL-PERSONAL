@@ -21,32 +21,43 @@ public class pruebas {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws SQLException 
-    {
+    public static void main(String[] args) throws Exception {
 
-        Puente_Sql_Java pe = new Puente_Sql_Java();
-        // Datos para la meta de ahorro
-        long idUsuario =1L;                      
-        long idSubcategoriaAhorro=7L;           // subcategoría de tipo "ahorro"
-        String nombreMeta= "Fondo de emergencia";
-        String descripcionMeta= "Ahorro para fondo de emergencia 2025";
-        BigDecimal montoObjetivo= new BigDecimal("20000.00");
-        Date fechaInicio= Date.valueOf("2025-01-01");
-        Date fechaObjetivo= Date.valueOf("2025-12-31");
-        String prioridad="alta";//alta | media | baja
-        String creadoPor="royum";
+    Puente_Sql_Java pe = new Puente_Sql_Java();
 
-        try {
-            pe.InsertarMetaAhorro(idUsuario,idSubcategoriaAhorro,nombreMeta,descripcionMeta,montoObjetivo,fechaInicio,fechaObjetivo,prioridad,creadoPor);
-            System.out.println("Meta de ahorro insertada correctamente.");
-        }catch (SQLException ex){
-            System.err.println("Error al insertar meta de ahorro: SQLState="+ex.getSQLState()+" msg="+ex.getMessage());
-            ex.printStackTrace();
-        }
-        
-        
-        
-    }
+    System.out.println("Monto ejecutado: "
+            + pe.fnCalcularMontoEjecutado(3, 2025, 2));
+
+    System.out.println("Porcentaje ejecutado: "
+            + pe.fnCalcularPorcentajeEjecutado(3, 1, 2025, 2));
+
+    System.out.println("Balance subcategoria: "
+            + pe.fnObtenerBalanceSubcategoria(1, 3, 2025, 2));
+
+    System.out.println("Total categoria (presupuesto): "
+            + pe.fnObtenerTotalCategoriaMes(4, 1, 2025, 2));
+
+    System.out.println("Total ejecutado categoria: "
+            + pe.fnObtenerTotalEjecutadoCategoriaMes(4, 2025, 2));
+
+    System.out.println("Dias hasta vencimiento obligacion: "
+            + pe.fnDiasHastaVencimiento(1));
+
+    System.out.println("Presupuesto vigente (2025-03-15): "
+            + pe.fnValidarVigenciaPresupuesto(
+                    java.sql.Date.valueOf("2025-03-15"), 1));
+
+    System.out.println("Categoria de subcategoria 3: "
+            + pe.fnObtenerCategoriaPorSubcategoria(3));
+
+    System.out.println("Proyeccion gasto mensual: "
+            + pe.fnCalcularProyeccionGastoMensual(3, 2025, 2));
+
+    System.out.println("Promedio gasto ultimos 3 meses: "
+            + pe.fnObtenerPromedioGastoSubcategoria(1, 3, 3));
+}
+
+
     private static void imprimirSubcategoria(Subcategoria s) {
         if (s == null) {
             System.out.println("Subcategoria = null");

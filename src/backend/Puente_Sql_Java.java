@@ -1589,11 +1589,224 @@ public class Puente_Sql_Java
         return m;
     }
 
+    
+    public BigDecimal fnCalcularMontoEjecutado(long idSubcategoria, int anio, int mes) throws SQLException {
+
+    // IMPORTANTE: usamos VALUES en lugar de SELECT
+    String SQL = "VALUES ( fn_calcular_monto_ejecutado(?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idSubcategoria);
+        ps.setInt(2, anio);
+        ps.setInt(3, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                // Primera columna (C1)
+                BigDecimal valor = rs.getBigDecimal(1);
+                return (valor != null) ? valor : BigDecimal.ZERO;
+            }
+            return BigDecimal.ZERO;
+        }
+
+    } catch (SQLException ex) {
+        if ("45000".equals(ex.getSQLState())) {
+            System.err.println("BD controlada (fn_calcular_monto_ejecutado): " + ex.getMessage());
+        }
+        throw ex;
+    }
+}
 
 
+    
+   public BigDecimal fnCalcularPorcentajeEjecutado(long idSubcategoria, long idPresupuesto,
+                                                int anio, int mes) throws SQLException {
+
+    String SQL = "VALUES ( fn_calcular_porcentaje_ejecutado(?, ?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idSubcategoria);
+        ps.setLong(2, idPresupuesto);
+        ps.setInt(3, anio);
+        ps.setInt(4, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
 
 
+    public BigDecimal fnObtenerBalanceSubcategoria(long idPresupuesto, long idSubcategoria,
+                                               int anio, int mes) throws SQLException {
 
+    String SQL = "VALUES ( fn_obtener_balance_subcategoria(?, ?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idPresupuesto);
+        ps.setLong(2, idSubcategoria);
+        ps.setInt(3, anio);
+        ps.setInt(4, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+   public BigDecimal fnObtenerTotalCategoriaMes(long idCategoria, long idPresupuesto,
+                                             int anio, int mes) throws SQLException {
+
+    String SQL = "VALUES ( fn_obtener_total_categoria_mes(?, ?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idCategoria);
+        ps.setLong(2, idPresupuesto);
+        ps.setInt(3, anio);
+        ps.setInt(4, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+  public BigDecimal fnObtenerTotalEjecutadoCategoriaMes(long idCategoria,
+                                                      int anio, int mes) throws SQLException {
+
+    String SQL = "VALUES ( fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idCategoria);
+        ps.setInt(2, anio);
+        ps.setInt(3, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+    
+    public Integer fnDiasHastaVencimiento(long idObligacion) throws SQLException {
+
+    String SQL = "VALUES ( fn_dias_hasta_vencimiento(?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idObligacion);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return null;
+        }
+    }
+}
+
+  public boolean fnValidarVigenciaPresupuesto(java.sql.Date fecha, long idPresupuesto) throws SQLException {
+
+    String SQL = "VALUES ( fn_validar_vigencia_presupuesto(?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setDate(1, fecha);
+        ps.setLong(2, idPresupuesto);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBoolean(1);
+            }
+            return false;
+        }
+    }
+}
+
+
+   public Long fnObtenerCategoriaPorSubcategoria(long idSubcategoria) throws SQLException {
+
+    String SQL = "VALUES ( fn_obtener_categoria_por_subcategoria(?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idSubcategoria);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            return null;
+        }
+    }
+}
+
+   public BigDecimal fnCalcularProyeccionGastoMensual(long idSubcategoria,
+                                                   int anio, int mes) throws SQLException {
+
+    String SQL = "VALUES ( fn_calcular_proyeccion_gasto_mensual(?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idSubcategoria);
+        ps.setInt(2, anio);
+        ps.setInt(3, mes);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+    public BigDecimal fnObtenerPromedioGastoSubcategoria(long idUsuario, long idSubcategoria,
+                                                     int cantidadMeses) throws SQLException {
+
+    String SQL = "VALUES ( fn_obtener_promedio_gasto_subcategoria(?, ?, ?) )";
+
+    try (Connection con = ConexionBD.getConnection();
+         PreparedStatement ps = con.prepareStatement(SQL)) {
+
+        ps.setLong(1, idUsuario);
+        ps.setLong(2, idSubcategoria);
+        ps.setInt(3, cantidadMeses);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
 
     
     
