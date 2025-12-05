@@ -248,7 +248,7 @@ public class Puente_Sql_Java
             
             if("23503".equals(sqlState) || "23513".equals(sqlState) || "23000".equals(sqlState)) 
             {
-                // Mensaje más amigable para presentar en UI
+                
                 String userMessage = "No se puede eliminar la categoría porque está relacionada con subcategorías u otros registros.";
                 
                 throw new SQLException(userMessage, sqlState);
@@ -385,7 +385,7 @@ public class Puente_Sql_Java
             {
                 
                 System.err.println("BD controlada: " + ex.getMessage());
-                throw ex; // o envolver en una excepción de negocio
+                throw ex;
             }
             
             if("23503".equals(sqlState) || "23513".equals(sqlState) || "23000".equals(sqlState)) 
@@ -1296,10 +1296,306 @@ public class Puente_Sql_Java
         }
         return t;
     }
+    public void InsertarMetaAhorro(long idUsuario,long idSubcategoria,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaInicio,java.sql.Date fechaObjetivo,String prioridad,String creadoPor) throws SQLException 
+    {
+
+    String SQL = "{ CALL SP_INSERTAR_META(?,?,?,?,?,?,?,?,?) }";
+
+        try(Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idUsuario);
+            cs.setLong(2, idSubcategoria);
+            cs.setString(3, nombre);
+
+            if(descripcion ==null) 
+            {
+                cs.setNull(4, Types.VARCHAR);
+            }else{
+                cs.setString(4, descripcion);
+            }
+
+            cs.setBigDecimal(5, montoObjetivo);
+            cs.setDate(6, fechaInicio);
+            cs.setDate(7, fechaObjetivo);
+
+            if(prioridad ==null)
+            {
+                cs.setNull(8, Types.VARCHAR);
+            }else{
+                cs.setString(8, prioridad);
+            }
+
+            if(creadoPor ==null) 
+            {
+                cs.setNull(9, Types.VARCHAR);
+            }else{
+                cs.setString(9, creadoPor);
+            }
+
+            cs.execute();
+        }catch (SQLException ex)
+        {
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (insert meta): " + ex.getMessage());
+            }
+            throw ex;
+        }
+    }
+    public void ActualizarMetaAhorro(long idMeta,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaObjetivo,String prioridad,String estado,String modificadoPor) throws SQLException 
+    {
+
+        String SQL="{ CALL SP_ACTUALIZAR_META(?,?,?,?,?,?,?,?) }";
+
+        try(Connection con = ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idMeta);
+
+            if(nombre ==null) 
+            {
+                cs.setNull(2, Types.VARCHAR);
+            }else{
+                cs.setString(2, nombre);
+            }
+
+            if(descripcion== null) 
+            {
+                cs.setNull(3, Types.VARCHAR);
+            }else{
+                cs.setString(3, descripcion);
+            }
+
+            if(montoObjetivo ==null) 
+            {
+                cs.setNull(4, Types.DECIMAL);
+            }else{
+                cs.setBigDecimal(4, montoObjetivo);
+            }
+
+            if(fechaObjetivo==null)
+            {
+                cs.setNull(5, Types.DATE);
+            }else{
+                cs.setDate(5, fechaObjetivo);
+            }
+
+            if(prioridad ==null) 
+            {
+                cs.setNull(6, Types.VARCHAR);
+            }else{
+                cs.setString(6, prioridad);
+            }
+
+            if(estado ==null)
+            {
+                cs.setNull(7, Types.VARCHAR);
+            }else{
+                cs.setString(7, estado);
+            }
+
+            if(modificadoPor== null) 
+            {
+                cs.setNull(8, Types.VARCHAR);
+            }else{
+                cs.setString(8, modificadoPor);
+            }
+
+            cs.execute();
+        }catch (SQLException ex){
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (actualizar meta): " + ex.getMessage());
+            }
+            throw ex;
+        }
+    }
+    public boolean EliminarMetaAhorro(long idMeta) throws SQLException 
+    {
+
+        String SQL="{ CALL SP_ELIMINAR_META(?) }";
+
+        try(Connection con = ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
+        {
+
+            cs.setLong(1, idMeta);
+            cs.execute();
+            return true;
+
+        }catch (SQLException ex){
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (eliminar meta): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public MetaAhorro ConsultarMetaAhorro(long idMeta) throws SQLException
+    {
+
+        String SQL="SELECT * FROM TABLE(SP_CONSULTAR_META(?))";
+
+        try(Connection con= ConexionBD.getConnection(); PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idMeta);
+
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    return mapearMetaAhorro(rs);
+                }else{
+                    return null;
+                }
+            }
+
+        }catch (SQLException ex){
+            if ("45000".equals(ex.getSQLState())) {
+                System.err.println("BD controlada (consultar meta): " + ex.getMessage());
+                throw ex;
+            }
+            throw ex;
+        }
+    }
+    public List<MetaAhorro> ListarMetasAhorroUsuario(long idUsuario, String estado) throws SQLException 
+    {
+
+        List<MetaAhorro>lista=new ArrayList<>();
+        String SQL="SELECT * FROM TABLE(SP_LISTAR_METAS_USUARIO(?,?))";
+
+        try(Connection con= ConexionBD.getConnection(); PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+
+            ps.setLong(1, idUsuario);
+            if(estado==null) 
+            {
+                ps.setNull(2, Types.VARCHAR);
+            }else{
+                ps.setString(2, estado);
+            }
+
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                while(rs.next()) 
+                {
+                    lista.add(mapearMetaAhorro(rs));
+                }
+            }
+        }
+        return lista;
+    }
+    private MetaAhorro mapearMetaAhorro(ResultSet rs) throws SQLException 
+    {
+        MetaAhorro m = new MetaAhorro();
+
+        try 
+        {
+            long id = rs.getLong("ID_AHORRO");
+            if(rs.wasNull()) 
+            {
+                m.setId(null);
+            }else {
+                m.setId(id);
+            }
+        }catch (SQLException e) 
+        {
+            m.setId(null);
+        }
+
+        try 
+        {
+            m.setIdUsuario(rs.getLong("ID_USUARIO"));
+        }catch (SQLException e){
+        }
+        try 
+        {
+            m.setIdSubcategoria(rs.getLong("ID_SUBCATEGORIA"));
+        }catch (SQLException e) 
+        {
+        }
+        try 
+        {
+            m.setNombre(rs.getString("NOMBRE"));
+        } catch (SQLException e) 
+        {
+        }
+        try 
+        {
+            m.setDescripcion(rs.getString("DESCRIPCION_DETALLADA"));
+        } catch (SQLException e) {
+        }
+
+        try 
+        {
+            m.setMontoObjetivo(rs.getBigDecimal("MONTO_TOTAL_ALCANZAR"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            m.setMontoAhorrado(rs.getBigDecimal("MONTO_AHORRADO"));
+        } catch (SQLException e) {
+        }
+
+        try 
+        {
+            m.setPorcentajeAvance(rs.getBigDecimal("PORCENTAJE_AVANCE"));
+        } catch (SQLException e) 
+        {
+            m.setPorcentajeAvance(null);
+        }
+
+        try 
+        {
+            m.setFechaInicio(rs.getDate("FECHA_INICIO"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            m.setFechaObjetivo(rs.getDate("FECHA_OBJETIVO"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            m.setPrioridad(rs.getString("PRIORIDAD"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            m.setEstado(rs.getString("ESTADO"));
+        } catch (SQLException e) {
+        }
+
+        try 
+        {
+            m.setCreadoEn(rs.getTimestamp("CREADO_EN"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            m.setModificadoEn(rs.getTimestamp("MODIFICADO_EN"));
+        } catch (SQLException e) {
+        }
+        try
+        {
+            m.setCreadoPor(rs.getString("CREADO_POR"));
+        } catch (SQLException e) {
+        }
+        try 
+        {
+            m.setModificadoPor(rs.getString("MODIFICADO_POR"));
+        } catch (SQLException e) {
+        }
+
+        return m;
+    }
+
+
+
+
+
+
 
     
-    
-
     
     
 

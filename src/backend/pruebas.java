@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
 import backend.Usuario;
+import java.sql.Date;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -24,9 +25,25 @@ public class pruebas {
     {
 
         Puente_Sql_Java pe = new Puente_Sql_Java();
+        // Datos para la meta de ahorro
+        long idUsuario =1L;                      
+        long idSubcategoriaAhorro=7L;           // subcategoría de tipo "ahorro"
+        String nombreMeta= "Fondo de emergencia";
+        String descripcionMeta= "Ahorro para fondo de emergencia 2025";
+        BigDecimal montoObjetivo= new BigDecimal("20000.00");
+        Date fechaInicio= Date.valueOf("2025-01-01");
+        Date fechaObjetivo= Date.valueOf("2025-12-31");
+        String prioridad="alta";//alta | media | baja
+        String creadoPor="royum";
+
+        try {
+            pe.InsertarMetaAhorro(idUsuario,idSubcategoriaAhorro,nombreMeta,descripcionMeta,montoObjetivo,fechaInicio,fechaObjetivo,prioridad,creadoPor);
+            System.out.println("Meta de ahorro insertada correctamente.");
+        }catch (SQLException ex){
+            System.err.println("Error al insertar meta de ahorro: SQLState="+ex.getSQLState()+" msg="+ex.getMessage());
+            ex.printStackTrace();
+        }
         
-        pe.InsertarSubcategoria(6L, "ahorross", "ahorros personales", true, "royum");
-        System.out.println("insertado correctamente");
         
         
     }

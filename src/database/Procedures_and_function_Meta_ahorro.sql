@@ -303,7 +303,7 @@ BEGIN ATOMIC
             CASE WHEN Monto_total_alcanzar=0 THEN 0 
             ELSE round((Monto_ahorrado/Monto_total_alcanzar)*100,2)
             END AS Porcentaje_avance,
-			Fecha_inicio,
+	    Fecha_inicio,
             Fecha_objetivo,
             Prioridad,
             Estado,

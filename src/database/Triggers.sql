@@ -51,7 +51,7 @@ referencing new row as N
 for each row                                                            -- si en lugar de general quiero que la subcategoria se llame igual que la categoria, agrego N.Nombre
     insert into SUBCATEGORIA(Id_categoria,Nombre_subcategoria,Descripcion_detallada,Estado,Por_defecto)
     values(N.Id_categoria,'Subcategoría por defecto de la categoria',N.Nombre,true,true);
-
+							--que el uusario puede elegir el nombre de la categoria
 
 
 
