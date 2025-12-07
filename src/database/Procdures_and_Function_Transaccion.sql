@@ -17,8 +17,8 @@ CREATE PROCEDURE SP_INSERTAR_TRANSACCION
     IN p_descripcion VARCHAR(500),
     IN p_monto DECIMAL(14,2),
     IN p_fecha DATE,
-    IN p_metodo_pago VARCHAR(30),
-    IN p_creado_por VARCHAR(100)
+    IN p_metodo_pago VARCHAR(30)
+    
 
 )
 MODIFIES SQL DATA
@@ -129,7 +129,7 @@ BEGIN ATOMIC
         LOWER(p_metodo_pago),
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP,
-        COALESCE(p_creado_por,'system')
+        'royum'
 	
 	);
 END;
@@ -195,7 +195,7 @@ BEGIN ATOMIC
         Fecha=p_fecha,
         Metodo_de_pago=LOWER(p_metodo_pago),
         modificado_en=CURRENT_TIMESTAMP,
-        modificado_por=COALESCE(p_modificado_por,'system')
+        modificado_por='royum'
     WHERE Id_transaccion=p_id_transaccion;
 END;
 

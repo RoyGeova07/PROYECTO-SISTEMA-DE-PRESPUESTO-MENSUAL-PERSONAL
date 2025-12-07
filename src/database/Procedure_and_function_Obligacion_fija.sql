@@ -14,8 +14,7 @@ CREATE PROCEDURE SP_INSERTAR_OBLIGACION
     IN p_monto DECIMAL(14,2),
     IN p_dia_vencimiento SMALLINT,
     IN p_fecha_inicio DATE,
-    IN p_fecha_fin DATE,
-    IN p_creado_por VARCHAR(100)
+    IN p_fecha_fin DATE
 
 )
 MODIFIES SQL DATA
@@ -91,7 +90,7 @@ BEGIN ATOMIC
         p_fecha_inicio,
         p_fecha_fin,
         CURRENT_TIMESTAMP,
-        COALESCE(p_creado_por,'system')
+        'royum'
 	 
 	 );
 END;
@@ -141,7 +140,7 @@ BEGIN ATOMIC
         Fecha_de_finalizacion=p_fecha_fin,
         Esta_vigente=COALESCE(p_activo, Esta_vigente),
         modificado_en=CURRENT_TIMESTAMP,
-        modificado_por=COALESCE(p_modificado_por,'system')
+        modificado_por='royum'
     WHERE Id_obligacion_fija=p_id_obligacion;
 END;
 
@@ -165,7 +164,7 @@ BEGIN ATOMIC
 	UPDATE OBLIGACION_FIJA
     SET Esta_vigente=FALSE,
         modificado_en=CURRENT_TIMESTAMP,
-        modificado_por='system'
+        modificado_por='royum'
     WHERE Id_obligacion_fija=p_id_obligacion;
 END;
 

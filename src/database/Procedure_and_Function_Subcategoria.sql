@@ -10,8 +10,7 @@ CREATE PROCEDURE SP_INSERTAR_SUBCATEGORIA
 	IN p_id_categoria bigint,
 	IN p_nombre varchar(70),
 	in p_descripcion varchar(500),
-	IN p_es_defecto boolean,
-	IN p_creado_por varchar(100)
+	IN p_es_defecto boolean
 	
 
 )
@@ -22,7 +21,7 @@ BEGIN ATOMIC
 	IF exists(SELECT 1 FROM CATEGORIA WHERE Id_categoria=p_id_categoria)THEN
 		
 	
-		IF p_es_defecto= IS TRUE THEN
+		IF p_es_defecto IS TRUE THEN
 			UPDATE SUBCATEGORIA
 			SET Por_defecto=FALSE
 			WHERE Id_categoria=p_id_categoria AND Por_defecto=true;
@@ -49,7 +48,7 @@ BEGIN ATOMIC
             TRUE,
             COALESCE(p_es_defecto, FALSE),
             CURRENT_TIMESTAMP,
-            COALESCE(p_creado_por, 'system')
+            'royum'
 		
 		);
 	ELSE 
@@ -63,16 +62,16 @@ CREATE PROCEDURE SP_ACTUALIZAR_SUBCATEGORIA
 	IN p_id_subcategoria bigint,
 	IN p_nombre varchar(70),
 	IN p_descripcion varchar(500),
-	IN p_es_defecto boolean,
-	IN p_modificado_por varchar(100)
+	IN p_es_defecto boolean
 
 )
 MODIFIES SQL DATA
 BEGIN ATOMIC
+	DECLARE v_id_categoria BIGINT;
 	IF exists(SELECT 1 FROM SUBCATEGORIA WHERE Id_subcategoria=p_id_subcategoria)THEN
 	
 		IF p_es_defecto IS TRUE THEN
-			  DECLARE v_id_categoria BIGINT;
+			  
     	    SELECT Id_categoria INTO v_id_categoria FROM SUBCATEGORIA WHERE Id_subcategoria=p_id_subcategoria;
 
 	        UPDATE SUBCATEGORIA
@@ -84,7 +83,7 @@ BEGIN ATOMIC
 		SET Nombre_subcategoria=p_nombre,
 			Descripcion_detallada=p_descripcion,
 			por_defecto=coalesce(p_es_defecto,por_defecto),
-            modificado_por=COALESCE(p_modificado_por,'system'),
+            modificado_por='royum',
             modificado_en=CURRENT_TIMESTAMP
         WHERE Id_subcategoria=p_id_subcategoria;
 	ELSE 
@@ -226,10 +225,7 @@ BEGIN ATOMIC
 END;
 		
 		
-CALL PUBLIC.SP_INSERTAR_SUBCATEGORIA(1, 'Restaurantes', 'Gastos fuera de casa', FALSE, 'royum');
 
-		
-		
 		
 		
 		

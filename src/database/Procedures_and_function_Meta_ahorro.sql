@@ -15,8 +15,7 @@ CREATE PROCEDURE SP_INSERTAR_META
     IN p_monto_objetivo DECIMAL(14,2),
     IN p_fecha_inicio DATE,
     IN p_fecha_objetivo DATE,
-    IN p_prioridad VARCHAR(10),
-    IN p_creado_por VARCHAR(100)
+    IN p_prioridad VARCHAR(10)
 
 )
 MODIFIES SQL DATA
@@ -87,7 +86,7 @@ BEGIN ATOMIC
         LOWER(COALESCE(p_prioridad,'media')),
         'en_progreso',--al crear queda en_progreso por defecto
         CURRENT_TIMESTAMP,
-        COALESCE(p_creado_por,'system')
+        'royum'
         
     );
 END;
@@ -155,7 +154,7 @@ BEGIN ATOMIC
         Prioridad=COALESCE(LOWER(p_prioridad), Prioridad),
         Estado=COALESCE(p_estado, Estado),
         modificado_en=CURRENT_TIMESTAMP,
-        modificado_por=COALESCE(p_modificado_por, modificado_por)
+        modificado_por='royum'
      WHERE Id_Ahorro=p_id_meta;
 	
 	--si despues de la actualizacion el monto_ahorrado >= objetivo, forzar estado completed
@@ -303,7 +302,7 @@ BEGIN ATOMIC
             CASE WHEN Monto_total_alcanzar=0 THEN 0 
             ELSE round((Monto_ahorrado/Monto_total_alcanzar)*100,2)
             END AS Porcentaje_avance,
-	    Fecha_inicio,
+			Fecha_inicio,
             Fecha_objetivo,
             Prioridad,
             Estado,
@@ -320,13 +319,12 @@ BEGIN ATOMIC
     
 END;
 
-ALTER TABLE META_AHORRO ALTER COLUMN Estado SET DATA TYPE VARCHAR(20);
-	
+
 	
 	
 
 	
-            
+	
 	
 	
 	

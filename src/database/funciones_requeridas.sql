@@ -1,7 +1,4 @@
-------------------------------------------------------------
--- FUNCIONES REQUERIDAS – PROYECTO PRESUPUESTO PERSONAL
--- Archivo: funciones_requeridas.sql
-------------------------------------------------------------
+
 
 
 /*==========================================================
@@ -406,7 +403,7 @@ BEGIN ATOMIC
       FROM PRESUPUESTO
      WHERE Id_presupuesto = p_id_presupuesto;
 
-    -- Primer día de vigencia
+    --Primer dia de vigencia
     SET v_fecha_inicio = CAST(
         LPAD(CAST(v_anio_inicio AS VARCHAR(4)),4,'0')
         || '-' ||
@@ -415,7 +412,7 @@ BEGIN ATOMIC
         AS DATE
     );
 
-    -- Primer día del mes de fin
+    --Primer dia del mes de fin
     SET v_fecha_fin = CAST(
         LPAD(CAST(v_anio_fin AS VARCHAR(4)),4,'0')
         || '-' ||
@@ -424,7 +421,7 @@ BEGIN ATOMIC
         AS DATE
     );
 
-    -- Último día del mes de fin
+    --Ultimo dia del mes de fin
     SET v_fecha_fin = DATEADD('day', -1, DATEADD('month', 1, v_fecha_fin));
 
     RETURN (p_fecha >= v_fecha_inicio AND p_fecha <= v_fecha_fin);
@@ -433,7 +430,7 @@ END;
 
 
 /*==========================================================
-  8) Obtener id_categoria a partir de una subcategoría
+  8) Obtener id_categoria a partir de una subcategoria
      fn_obtener_categoria_por_subcategoria(id_subcategoria)
 ==========================================================*/
 DROP FUNCTION IF EXISTS fn_obtener_categoria_por_subcategoria;
@@ -467,7 +464,7 @@ END;
 
 
 /*==========================================================
-  9) Proyección de gasto mensual de una subcategoría
+  9) Proyeccion de gasto mensual de una subcategoria
      fn_calcular_proyeccion_gasto_mensual(id_subcategoria, anio, mes)
 ==========================================================*/
 DROP FUNCTION IF EXISTS fn_calcular_proyeccion_gasto_mensual;
@@ -486,7 +483,7 @@ BEGIN ATOMIC
     DECLARE v_fecha_base       DATE;
     DECLARE v_result           DECIMAL(14,2);
 
-    -- Monto ejecutado en ese mes/año
+    --Monto ejecutado en ese mes/año
     SELECT COALESCE(SUM(Monto),0)
       INTO v_monto_actual
       FROM TRANSACCION
@@ -495,7 +492,7 @@ BEGIN ATOMIC
        AND Mes                   = p_mes
        AND LOWER(Tipo_de_transaccion) = 'gasto';
 
-    -- Primer día del mes solicitado
+    --Primer dia del mes solicitado
     SET v_fecha_base = CAST(
         LPAD(CAST(p_anio AS VARCHAR(4)),4,'0')
         || '-' ||
@@ -504,12 +501,12 @@ BEGIN ATOMIC
         AS DATE
     );
 
-    -- Días del mes (último día = primer día del mes siguiente - 1)
+    --Dias del mes (ultimo dia = primer dia del mes siguiente - 1)
     SET v_dias_mes = DAY(
         DATEADD('day', -1, DATEADD('month', 1, v_fecha_base))
     );
 
-    -- Si es el mes actual, usamos día actual; si no, asumimos mes completo
+    --Si es el mes actual, usamos dia actual; si no, asumimos mes completo
     IF YEAR(CURRENT_DATE) = p_anio AND MONTH(CURRENT_DATE) = p_mes THEN
         SET v_dias_transcurridos = DAY(CURRENT_DATE);
     ELSE
@@ -527,7 +524,7 @@ END;
 
 
 /*==========================================================
-  10) Promedio de gasto en una subcategoría en los últimos N meses
+  10) Promedio de gasto en una subcategoría en los ultimos N meses
       fn_obtener_promedio_gasto_subcategoria(
           id_usuario, id_subcategoria, cantidad_meses )
 ==========================================================*/
@@ -550,7 +547,7 @@ BEGIN ATOMIC
             SET MESSAGE_TEXT = 'La cantidad de meses debe ser mayor que cero';
     END IF;
 
-    -- Primer día del mes más antiguo a considerar
+    --Primer dia del mes mas antiguo a considerar
     SET v_fecha_inicio = DATEADD(
         'month',
         -p_cantidad_meses + 1,

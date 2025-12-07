@@ -22,10 +22,10 @@ al igual que ResultSet lo utilizo para manejar los resultados de una consulta de
 public class Puente_Sql_Java 
 {
 
-    public void Insertar_usuario(String nombre,String apellido,String correo,BigDecimal salario,String creadoPor)throws SQLException
+    public void Insertar_usuario(String nombre,String apellido,String correo,BigDecimal salario)throws SQLException
     {
         
-        String SQL="{ CALL sp_insertar_usuario(?,?,?,?,?)}";
+        String SQL="{ CALL sp_insertar_usuario(?,?,?,?)}";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
@@ -34,17 +34,16 @@ public class Puente_Sql_Java
             cs.setString(2, apellido);
             cs.setString(3, correo);
             cs.setBigDecimal(4, salario);
-            cs.setString(5, creadoPor);
             
             cs.execute();
             
         }
         
     }
-    public void Actualizar_usuario(long idUsuario,String nombre,String apellido,BigDecimal salario,String modificadoPor)throws SQLException
+    public void Actualizar_usuario(long idUsuario,String nombre,String apellido,BigDecimal salario)throws SQLException
     {
         
-        String SQL="{ CALL sp_actualizar_usuario(?,?,?,?,?)}";
+        String SQL="{ CALL sp_actualizar_usuario(?,?,?,?)}";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
@@ -53,7 +52,6 @@ public class Puente_Sql_Java
             cs.setString(2, nombre);
             cs.setString(3, apellido);
             cs.setBigDecimal(4, salario);
-            cs.setString(5, modificadoPor);
             
             cs.executeUpdate();
             
@@ -164,18 +162,16 @@ public class Puente_Sql_Java
         }
         
     }
-    public boolean ReactivarUsuario(long idUsuario,String modificadoPor)throws SQLException
+    public boolean ReactivarUsuario(long idUsuario)throws SQLException
     {
         
-        String SQL="{ CALL sp_reactivar_usuario(?, ?) }";
+        String SQL="{ CALL sp_reactivar_usuario(?) }";
         
-        System.out.println("DEBUG: Reactivando usuario con id = " + idUsuario + ", modificadoPor = " + modificadoPor);
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
             cs.setLong(1, idUsuario);
-            cs.setString(2, modificadoPor);
             
             cs.execute();
             
@@ -196,10 +192,10 @@ public class Puente_Sql_Java
         
  
     }
-    public void InsertarCategoria(String nombre,String descripcion,String tipo,Long idUsuario,String creadoPor)throws SQLException
+    public void InsertarCategoria(String nombre,String descripcion,String tipo,Long idUsuario)throws SQLException
     {
         
-        String SQL="{ CALL SP_INSERTAR_CATEGORIA(?, ?, ?, ?, ?) }";
+        String SQL="{ CALL SP_INSERTAR_CATEGORIA(?,?,?,?) }";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
@@ -208,24 +204,22 @@ public class Puente_Sql_Java
             cs.setString(2, descripcion);
             cs.setString(3, tipo==null?null:tipo);//por el lower
             if(idUsuario==null)cs.setNull(4, Types.BIGINT);else cs.setLong(4, idUsuario);
-            cs.setString(5, creadoPor);
             
             cs.execute();
             
         }
         
     }
-    public void ActualizarCategoria(long idCategoria,String nombre,String descripcion,String modificadoPor)throws SQLException
+    public void ActualizarCategoria(long idCategoria,String nombre,String descripcion)throws SQLException
     {
         
-        String SQL="{ CALL SP_ACTUALIZAR_CATEGORIA(?, ?, ?, ?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_CATEGORIA(?, ?, ?) }";
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
             
             cs.setLong(1, idCategoria);
             cs.setString(2, nombre);
             cs.setString(3, descripcion);
-            cs.setString(4, modificadoPor);
             cs.execute();
             
         }
@@ -332,10 +326,10 @@ public class Puente_Sql_Java
 
         return c;
     }
-    public void InsertarSubcategoria(long idCategoria,String nombre,String descripcion,boolean esDefecto,String creadoPor)throws SQLException 
+    public void InsertarSubcategoria(long idCategoria,String nombre,String descripcion,boolean esDefecto)throws SQLException 
     {
         
-        String SQL="{ CALL SP_INSERTAR_SUBCATEGORIA(?,?,?,?,?) }";
+        String SQL="{ CALL SP_INSERTAR_SUBCATEGORIA(?,?,?,?) }";
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
 
@@ -343,27 +337,19 @@ public class Puente_Sql_Java
             cs.setString(2, nombre);
             cs.setString(3, descripcion);
             cs.setBoolean(4, esDefecto);
-            cs.setString(5, creadoPor);
 
             cs.execute();
         }
     }
-    public void ActualizarSubcategoria(long idSubcategoria,String nombre,String descripcion,String modificadoPor)throws SQLException 
+    public void ActualizarSubcategoria(long idSubcategoria,String nombre,String descripcion)throws SQLException 
     {
-        String SQL="{ CALL SP_ACTUALIZAR_SUBCATEGORIA(?,?,?,?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_SUBCATEGORIA(?,?,?) }";
         try (Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
 
             cs.setLong(1, idSubcategoria);
             cs.setString(2, nombre);
             cs.setString(3, descripcion);
-
-            if(modificadoPor==null) 
-            {
-                cs.setNull(4, java.sql.Types.VARCHAR);
-            }else{
-                cs.setString(4, modificadoPor);
-            }
 
             cs.execute();
         }
@@ -473,10 +459,10 @@ public class Puente_Sql_Java
 
         return s;
     }
-    public void InsertarPresupuesto(long idUsuario,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro,String creadoPor)throws SQLException
+    public void InsertarPresupuesto(long idUsuario,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro)throws SQLException
     {
         
-        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?,?) }";
+        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?) }";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
         {
@@ -491,7 +477,7 @@ public class Puente_Sql_Java
             if(totalIngresos==null)cs.setNull(7, java.sql.Types.DECIMAL);else cs.setBigDecimal(7, totalIngresos);
             if(totalGastos==null)cs.setNull(8, java.sql.Types.DECIMAL);else cs.setBigDecimal(8, totalGastos);
             if(totalAhorro==null)cs.setNull(9, java.sql.Types.DECIMAL);else cs.setBigDecimal(9, totalAhorro);
-            if(creadoPor==null)cs.setNull(10, java.sql.Types.VARCHAR);else cs.setString(10, creadoPor);
+            
             
             cs.execute();
 
@@ -507,10 +493,10 @@ public class Puente_Sql_Java
         }
         
     }
-    public void ActualizarPresupuesto(long idPresupuesto,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro,String modificadoPor)throws SQLException
+    public void ActualizarPresupuesto(long idPresupuesto,String nombreDescriptivo,int anioInicio, int mesInicio,int anioFin, int mesFin,java.math.BigDecimal totalIngresos,java.math.BigDecimal totalGastos,java.math.BigDecimal totalAhorro)throws SQLException
     {
         
-        String SQL="{ CALL SP_ACTUALIZAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?,?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_PRESUPUESTO(?,?,?,?,?,?,?,?,?) }";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
@@ -526,8 +512,6 @@ public class Puente_Sql_Java
             if(totalGastos==null)cs.setNull(8, java.sql.Types.DECIMAL);else cs.setBigDecimal(8, totalGastos);
             if(totalAhorro==null)cs.setNull(9, java.sql.Types.DECIMAL);else cs.setBigDecimal(9, totalAhorro);
 
-            if(modificadoPor==null)cs.setNull(10, java.sql.Types.VARCHAR);else cs.setString(10, modificadoPor);
-            
             cs.execute();
              
         }catch(SQLException ex){
@@ -741,10 +725,10 @@ public class Puente_Sql_Java
 
         return p;
     }
-    public void InsertarPresupuestoDetalle(long idPresupuesto,long idSubcategoria,java.math.BigDecimal montoMensual,String justificacion,String creadoPor)throws SQLException
+    public void InsertarPresupuestoDetalle(long idPresupuesto,long idSubcategoria,java.math.BigDecimal montoMensual,String justificacion)throws SQLException
     {
         
-        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO_DETALLE(?,?,?,?,?) }";
+        String SQL="{ CALL SP_INSERTAR_PRESUPUESTO_DETALLE(?,?,?,?) }";
         
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
@@ -753,7 +737,7 @@ public class Puente_Sql_Java
             cs.setLong(2, idSubcategoria);
             if(montoMensual==null) cs.setNull(3, java.sql.Types.DECIMAL);else cs.setBigDecimal(3, montoMensual);
             if(justificacion== null) cs.setNull(4, java.sql.Types.VARCHAR);else cs.setString(4, justificacion);
-            if(creadoPor ==null) cs.setNull(5, java.sql.Types.VARCHAR);else cs.setString(5, creadoPor);
+           
             
             cs.execute();
             
@@ -767,9 +751,9 @@ public class Puente_Sql_Java
         }
         
     }
-    public void ActualizarPresupuestoDetalle(long idDetalle,java.math.BigDecimal montoMensual,String justificacion,String modificadoPor)throws SQLException 
+    public void ActualizarPresupuestoDetalle(long idDetalle,java.math.BigDecimal montoMensual,String justificacion)throws SQLException 
     {
-        String SQL = "{ CALL SP_ACTUALIZAR_PRESUPUESTO_DETALLE(?,?,?,?) }";
+        String SQL = "{ CALL SP_ACTUALIZAR_PRESUPUESTO_DETALLE(?,?,?) }";
         try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
 
@@ -786,12 +770,7 @@ public class Puente_Sql_Java
             }else{
                 cs.setString(3, justificacion);
             }
-            if(modificadoPor==null) 
-            {
-                cs.setNull(4, java.sql.Types.VARCHAR);
-            }else{
-                cs.setString(4, modificadoPor);
-            }
+            
 
             cs.execute();
         }catch (SQLException ex){
@@ -887,10 +866,10 @@ public class Puente_Sql_Java
 
         return pd;
     }
-    public void InsertarObligacion(long idUsuario,long idSubcategoria,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaInicio,java.sql.Date fechaFin,String creadoPor) throws SQLException 
+    public void InsertarObligacion(long idUsuario,long idSubcategoria,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaInicio,java.sql.Date fechaFin) throws SQLException 
     {
         
-       String SQL = "{ CALL SP_INSERTAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?, ?, ?) }";
+       String SQL = "{ CALL SP_INSERTAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?, ?) }";
     try(Connection con = ConexionBD.getConnection();CallableStatement cs = con.prepareCall(SQL)) 
     {
 
@@ -902,8 +881,7 @@ public class Puente_Sql_Java
         cs.setInt(6, diaVencimiento);
         if (fechaInicio == null) cs.setNull(7, java.sql.Types.DATE); else cs.setDate(7, fechaInicio);
         if (fechaFin == null) cs.setNull(8, java.sql.Types.DATE); else cs.setDate(8, fechaFin);
-        if (creadoPor == null) cs.setNull(9, java.sql.Types.VARCHAR); else cs.setString(9, creadoPor);
-
+        
         cs.execute();
     } catch (SQLException ex) {
         if ("45000".equals(ex.getSQLState())) {
@@ -913,10 +891,10 @@ public class Puente_Sql_Java
             throw ex;
         }
     }
-    public void ActualizarObligacion(long idObligacion,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaFin,Boolean activo,String modificadoPor) throws SQLException
+    public void ActualizarObligacion(long idObligacion,String nombre,String descripcion,java.math.BigDecimal monto,int diaVencimiento,java.sql.Date fechaFin,Boolean activo) throws SQLException
     {
         
-        String SQL="{ CALL SP_ACTUALIZAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?, ?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_OBLIGACION(?, ?, ?, ?, ?, ?, ?) }";
         try(Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) 
         {
 
@@ -927,8 +905,7 @@ public class Puente_Sql_Java
             cs.setInt(5, diaVencimiento);
             if(fechaFin == null) cs.setNull(6, java.sql.Types.DATE); else cs.setDate(6, fechaFin);
             if(activo == null) cs.setNull(7, java.sql.Types.BOOLEAN); else cs.setBoolean(7, activo);
-            if(modificadoPor == null) cs.setNull(8, java.sql.Types.VARCHAR); else cs.setString(8, modificadoPor);
-
+           
             cs.execute();
         } catch (SQLException ex) {
             if ("45000".equals(ex.getSQLState())) {
@@ -1025,10 +1002,10 @@ public class Puente_Sql_Java
         return o;
     }
     //                                                                                  puede ser null
-    public void InsertarTransaccion(long idUsuario,long idPresupuesto,int anio,int mes,long idSubcategoria,Long idObligacion,String tipo,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String creadoPor)throws SQLException 
+    public void InsertarTransaccion(long idUsuario,long idPresupuesto,int anio,int mes,long idSubcategoria,Long idObligacion,String tipo,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago)throws SQLException 
     {
         
-        String SQL="{ CALL SP_INSERTAR_TRANSACCION(?,?,?,?,?,?,?,?,?,?,?,?) }";
+        String SQL="{ CALL SP_INSERTAR_TRANSACCION(?,?,?,?,?,?,?,?,?,?,?) }";
         
         try(Connection con = ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
@@ -1049,8 +1026,6 @@ public class Puente_Sql_Java
             cs.setBigDecimal(9, monto);
             cs.setDate(10, fecha);
             cs.setString(11, metodoPago);
-            if(creadoPor == null) cs.setNull(12, Types.VARCHAR);
-            else cs.setString(12, creadoPor);
 
             cs.execute();
             
@@ -1063,10 +1038,10 @@ public class Puente_Sql_Java
         }
         
     }
-    public void ActualizarTransaccion(long idTransaccion,int anio,int mes,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago,String modificadoPor) throws SQLException 
+    public void ActualizarTransaccion(long idTransaccion,int anio,int mes,String descripcion,BigDecimal monto,java.sql.Date fecha,String metodoPago) throws SQLException 
     {
         
-        String SQL="{ CALL SP_ACTUALIZAR_TRANSACCION(?,?,?,?,?,?,?,?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_TRANSACCION(?,?,?,?,?,?,?) }";
         
         try(Connection con = ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL)) 
         {
@@ -1081,8 +1056,6 @@ public class Puente_Sql_Java
             cs.setDate(6, fecha);
             cs.setString(7, metodoPago);
 
-            if(modificadoPor==null) cs.setNull(8, Types.VARCHAR);
-            else cs.setString(8, modificadoPor);
 
             cs.execute();
             
@@ -1296,10 +1269,10 @@ public class Puente_Sql_Java
         }
         return t;
     }
-    public void InsertarMetaAhorro(long idUsuario,long idSubcategoria,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaInicio,java.sql.Date fechaObjetivo,String prioridad,String creadoPor) throws SQLException 
+    public void InsertarMetaAhorro(long idUsuario,long idSubcategoria,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaInicio,java.sql.Date fechaObjetivo,String prioridad) throws SQLException 
     {
 
-    String SQL = "{ CALL SP_INSERTAR_META(?,?,?,?,?,?,?,?,?) }";
+    String SQL = "{ CALL SP_INSERTAR_META(?,?,?,?,?,?,?,?) }";
 
         try(Connection con = ConexionBD.getConnection(); CallableStatement cs = con.prepareCall(SQL)) 
         {
@@ -1326,12 +1299,7 @@ public class Puente_Sql_Java
                 cs.setString(8, prioridad);
             }
 
-            if(creadoPor ==null) 
-            {
-                cs.setNull(9, Types.VARCHAR);
-            }else{
-                cs.setString(9, creadoPor);
-            }
+            
 
             cs.execute();
         }catch (SQLException ex)
@@ -1342,10 +1310,10 @@ public class Puente_Sql_Java
             throw ex;
         }
     }
-    public void ActualizarMetaAhorro(long idMeta,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaObjetivo,String prioridad,String estado,String modificadoPor) throws SQLException 
+    public void ActualizarMetaAhorro(long idMeta,String nombre,String descripcion,BigDecimal montoObjetivo,java.sql.Date fechaObjetivo,String prioridad,String estado) throws SQLException 
     {
 
-        String SQL="{ CALL SP_ACTUALIZAR_META(?,?,?,?,?,?,?,?) }";
+        String SQL="{ CALL SP_ACTUALIZAR_META(?,?,?,?,?,?,?) }";
 
         try(Connection con = ConexionBD.getConnection(); CallableStatement cs=con.prepareCall(SQL)) 
         {
@@ -1394,12 +1362,6 @@ public class Puente_Sql_Java
                 cs.setString(7, estado);
             }
 
-            if(modificadoPor== null) 
-            {
-                cs.setNull(8, Types.VARCHAR);
-            }else{
-                cs.setString(8, modificadoPor);
-            }
 
             cs.execute();
         }catch (SQLException ex){
@@ -1590,20 +1552,23 @@ public class Puente_Sql_Java
     }
 
     
-    public BigDecimal fnCalcularMontoEjecutado(long idSubcategoria, int anio, int mes) throws SQLException {
+    public BigDecimal fnCalcularMontoEjecutado(long idSubcategoria, int anio, int mes) throws SQLException 
+    {
 
     // IMPORTANTE: usamos VALUES en lugar de SELECT
     String SQL = "VALUES ( fn_calcular_monto_ejecutado(?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL))
+    {
 
         ps.setLong(1, idSubcategoria);
         ps.setInt(2, anio);
         ps.setInt(3, mes);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
+        try (ResultSet rs = ps.executeQuery()) 
+        {
+            if (rs.next()) 
+            {
                 // Primera columna (C1)
                 BigDecimal valor = rs.getBigDecimal(1);
                 return (valor != null) ? valor : BigDecimal.ZERO;
@@ -1621,20 +1586,21 @@ public class Puente_Sql_Java
 
 
     
-   public BigDecimal fnCalcularPorcentajeEjecutado(long idSubcategoria, long idPresupuesto,
-                                                int anio, int mes) throws SQLException {
+   public BigDecimal fnCalcularPorcentajeEjecutado(long idSubcategoria, long idPresupuesto,int anio, int mes)throws SQLException 
+   {
 
     String SQL = "VALUES ( fn_calcular_porcentaje_ejecutado(?, ?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL))
+    {
 
         ps.setLong(1, idSubcategoria);
         ps.setLong(2, idPresupuesto);
         ps.setInt(3, anio);
         ps.setInt(4, mes);
 
-        try (ResultSet rs = ps.executeQuery()) {
+        try (ResultSet rs = ps.executeQuery()) 
+        {
             if (rs.next()) {
                 return rs.getBigDecimal(1);
             }
@@ -1644,13 +1610,13 @@ public class Puente_Sql_Java
 }
 
 
-    public BigDecimal fnObtenerBalanceSubcategoria(long idPresupuesto, long idSubcategoria,
-                                               int anio, int mes) throws SQLException {
+    public BigDecimal fnObtenerBalanceSubcategoria(long idPresupuesto, long idSubcategoria,int anio, int mes) throws SQLException 
+    {
 
     String SQL = "VALUES ( fn_obtener_balance_subcategoria(?, ?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL))
+    {
 
         ps.setLong(1, idPresupuesto);
         ps.setLong(2, idSubcategoria);
@@ -1666,13 +1632,13 @@ public class Puente_Sql_Java
     }
 }
 
-   public BigDecimal fnObtenerTotalCategoriaMes(long idCategoria, long idPresupuesto,
-                                             int anio, int mes) throws SQLException {
+   public BigDecimal fnObtenerTotalCategoriaMes(long idCategoria, long idPresupuesto,int anio, int mes) throws SQLException 
+   {
 
     String SQL = "VALUES ( fn_obtener_total_categoria_mes(?, ?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+    {
 
         ps.setLong(1, idCategoria);
         ps.setLong(2, idPresupuesto);
@@ -1688,13 +1654,13 @@ public class Puente_Sql_Java
     }
 }
 
-  public BigDecimal fnObtenerTotalEjecutadoCategoriaMes(long idCategoria,
-                                                      int anio, int mes) throws SQLException {
+  public BigDecimal fnObtenerTotalEjecutadoCategoriaMes(long idCategoria,int anio, int mes) throws SQLException 
+  {
 
     String SQL = "VALUES ( fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+    {
 
         ps.setLong(1, idCategoria);
         ps.setInt(2, anio);
@@ -1710,30 +1676,32 @@ public class Puente_Sql_Java
 }
 
     
-    public Integer fnDiasHastaVencimiento(long idObligacion) throws SQLException {
+    public Integer fnDiasHastaVencimiento(long idObligacion) throws SQLException 
+    {
 
-    String SQL = "VALUES ( fn_dias_hasta_vencimiento(?) )";
+        String SQL = "VALUES ( fn_dias_hasta_vencimiento(?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+        try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
 
-        ps.setLong(1, idObligacion);
+            ps.setLong(1, idObligacion);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+                return null;
             }
-            return null;
         }
     }
-}
 
-  public boolean fnValidarVigenciaPresupuesto(java.sql.Date fecha, long idPresupuesto) throws SQLException {
+  public boolean fnValidarVigenciaPresupuesto(java.sql.Date fecha, long idPresupuesto) throws SQLException 
+  {
 
     String SQL = "VALUES ( fn_validar_vigencia_presupuesto(?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+    {
 
         ps.setDate(1, fecha);
         ps.setLong(2, idPresupuesto);
@@ -1748,12 +1716,13 @@ public class Puente_Sql_Java
 }
 
 
-   public Long fnObtenerCategoriaPorSubcategoria(long idSubcategoria) throws SQLException {
+   public Long fnObtenerCategoriaPorSubcategoria(long idSubcategoria) throws SQLException 
+   {
 
     String SQL = "VALUES ( fn_obtener_categoria_por_subcategoria(?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+    try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+    {
 
         ps.setLong(1, idSubcategoria);
 
@@ -1766,50 +1735,48 @@ public class Puente_Sql_Java
     }
 }
 
-   public BigDecimal fnCalcularProyeccionGastoMensual(long idSubcategoria,
-                                                   int anio, int mes) throws SQLException {
+   public BigDecimal fnCalcularProyeccionGastoMensual(long idSubcategoria,int anio, int mes) throws SQLException 
+   {
 
-    String SQL = "VALUES ( fn_calcular_proyeccion_gasto_mensual(?, ?, ?) )";
+        String SQL = "VALUES ( fn_calcular_proyeccion_gasto_mensual(?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+        try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL))
+        {
 
-        ps.setLong(1, idSubcategoria);
-        ps.setInt(2, anio);
-        ps.setInt(3, mes);
+            ps.setLong(1, idSubcategoria);
+            ps.setInt(2, anio);
+            ps.setInt(3, mes);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getBigDecimal(1);
+            try (ResultSet rs = ps.executeQuery()) 
+            {
+                if (rs.next()) {
+                    return rs.getBigDecimal(1);
+                }
+                return BigDecimal.ZERO;
             }
-            return BigDecimal.ZERO;
         }
     }
-}
 
-    public BigDecimal fnObtenerPromedioGastoSubcategoria(long idUsuario, long idSubcategoria,
-                                                     int cantidadMeses) throws SQLException {
+    public BigDecimal fnObtenerPromedioGastoSubcategoria(long idUsuario, long idSubcategoria,int cantidadMeses) throws SQLException
+    {
 
-    String SQL = "VALUES ( fn_obtener_promedio_gasto_subcategoria(?, ?, ?) )";
+        String SQL = "VALUES ( fn_obtener_promedio_gasto_subcategoria(?, ?, ?) )";
 
-    try (Connection con = ConexionBD.getConnection();
-         PreparedStatement ps = con.prepareStatement(SQL)) {
+        try (Connection con = ConexionBD.getConnection();PreparedStatement ps = con.prepareStatement(SQL)) 
+        {
 
-        ps.setLong(1, idUsuario);
-        ps.setLong(2, idSubcategoria);
-        ps.setInt(3, cantidadMeses);
+            ps.setLong(1, idUsuario);
+            ps.setLong(2, idSubcategoria);
+            ps.setInt(3, cantidadMeses);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getBigDecimal(1);
+            try (ResultSet rs = ps.executeQuery()) 
+            {
+                if (rs.next()) {
+                    return rs.getBigDecimal(1);
+                }
+                return BigDecimal.ZERO;
             }
-            return BigDecimal.ZERO;
         }
-    }
-}
-
-    
-    
-    
+    }    
 
 }

@@ -5,13 +5,13 @@ Drop function if exists SP_CONSULTAR_CATEGORIA;
 
 --insertar categoria
 CREATE PROCEDURE SP_INSERTAR_CATEGORIA
+
 (
 
     in P_NOMBRE varchar(50),
     in P_DESCRIPCION varchar(500),
     in P_TIPO varchar(15),  
-    in P_ID_USUARIO bigint,
-    in P_CREADO_POR varchar(100)
+    in P_ID_USUARIO bigint
 
 )
 modifies sql DATA
@@ -33,7 +33,7 @@ BEGIN ATOMIC
         P_DESCRIPCION,
         LOWER(P_TIPO),      
         CURRENT_TIMESTAMP,
-        COALESCE(P_CREADO_POR,'system')
+        'royum'
         
     );
 END;
@@ -49,7 +49,7 @@ create procedure SP_ACTUALIZAR_CATEGORIA
 )
 modifies sql data
     update CATEGORIA
-set Nombre=P_NOMBRE,Descripcion_detallada=P_DESCRIPCION
+set Nombre=P_NOMBRE,Descripcion_detallada=P_DESCRIPCION,modificado_en=CURRENT_TIMESTAMP,modificado_por='royum'
 where Id_categoria=P_ID_CATEGORIA;
 
 --eliminar categoria, con validacion de subcategorias activas 
@@ -74,8 +74,6 @@ BEGIN ATOMIC
 END;
 	
 	
-delete from CATEGORIA
-where Id_categoria=P_ID_CATEGORIA
 
 CREATE FUNCTION SP_CONSULTAR_CATEGORIA(p_id_categoria bigint)
 RETURNS TABLE
@@ -98,7 +96,7 @@ BEGIN ATOMIC
 		(
 		
 			SELECT 
-				 Id_categoria,
+				Id_categoria,
                 Nombre,
                 Descripcion_detallada,
                 Tipo_de_categoria,
@@ -116,7 +114,7 @@ BEGIN ATOMIC
 	END IF;
 END;
 
-CALL SP_INSERTAR_CATEGORIA('Comida','Gastos en personales','gasto', 1, 'royum');
+CALL SP_INSERTAR_CATEGORIA('Limpieza','Gastos de limpieza','gasto', 1);
 
 
-TRUNCATE TABLE SUBCATEGORIA RESTART IDENTITY;--para empezar de nuevo el conteo
+TRUNCATE TABLE META_AHORRO RESTART IDENTITY;--para empezar de nuevo el conteo

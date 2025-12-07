@@ -14,8 +14,7 @@ CREATE PROCEDURE SP_INSERTAR_PRESUPUESTO
     IN p_mes_fin TINYINT,
     IN p_total_ingresos decimal(14,2),
     IN p_total_gastos decimal(14,2),
-    IN p_total_ahorro decimal(14,2),
-    IN p_creado_por varchar(100)
+    IN p_total_ahorro decimal(14,2)
 
 )
 MODIFIES SQL DATA
@@ -73,7 +72,7 @@ BEGIN ATOMIC
         CURRENT_TIMESTAMP,
         'activo',
         CURRENT_TIMESTAMP,
-        COALESCE(p_creado_por, 'system')
+        'royum'
 	
 	);
 END;
@@ -104,6 +103,10 @@ BEGIN ATOMIC
 		SIGNAL SQLSTATE '45000'SET message_text='El presupuesto indicado no existe';
 	END IF;
 	
+	SELECT Id_usuario INTO v_id_usuario
+	FROM PRESUPUESTO
+	WHERE Id_presupuesto=p_id_presupuesto;
+	
 	--se valida la vigencia 
 	IF NOT((p_anio_fin>p_anio_inicio)OR(p_anio_fin=p_anio_inicio AND p_mes_fin>=p_mes_inicio))THEN
         SIGNAL SQLSTATE '45000'SET MESSAGE_TEXT='Periodo invalido: fecha fin debe ser igual o posterior a fecha inicio';
@@ -130,7 +133,7 @@ BEGIN ATOMIC
         Total_de_gastos=p_total_gastos,
         Total_de_ahorro=p_total_ahorro,
         modificado_en=CURRENT_TIMESTAMP,
-        modificado_por=COALESCE(p_modificado_por,'system')
+        modificado_por='royum'
     WHERE Id_presupuesto=p_id_presupuesto;
 	
 END;

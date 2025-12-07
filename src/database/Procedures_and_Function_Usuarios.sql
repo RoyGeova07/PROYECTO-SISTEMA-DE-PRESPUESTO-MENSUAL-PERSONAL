@@ -14,8 +14,7 @@ DROP PROCEDURE IF EXISTS sp_reactivar_usuario;
 CREATE PROCEDURE sp_insertar_usuario(IN p_nombre VARCHAR(70),
 IN p_apellido VARCHAR(70),
 IN p_email VARCHAR(70),
-IN p_salario_mensual DECIMAL(14,2),
-IN p_creado_por VARCHAR(100))
+IN p_salario_mensual DECIMAL(14,2))
 MODIFIES SQL DATA
 BEGIN ATOMIC 
 	IF EXISTS(SELECT 1 FROM USUARIOS WHERE Correo_electronico=p_email)THEN 
@@ -23,7 +22,7 @@ BEGIN ATOMIC
 		SET message_text='El correo ya existe en la tabla de usuarios. Por favor escoja otro.';
 	ELSE 
 		INSERT INTO USUARIOS(Nombre_usuario,Apellido_usuario,Correo_electronico,Fecha_registro,Salario_mensual_base,Estado_usuario,creado_en,creado_por)
-		values(p_nombre,p_apellido,p_email,CURRENT_TIMESTAMP,p_salario_mensual,TRUE,CURRENT_TIMESTAMP,p_creado_por);
+		values(p_nombre,p_apellido,p_email,CURRENT_TIMESTAMP,p_salario_mensual,TRUE,CURRENT_TIMESTAMP,'royum');
 	END IF;
 END; 
 
@@ -34,8 +33,7 @@ CREATE PROCEDURE SP_ACTUALIZAR_USUARIO
   IN p_id_usuario BIGINT,
   IN p_nombre VARCHAR(70),
   IN p_apellido VARCHAR(70),
-  IN p_salario_mensual DECIMAL(14,2),
-  IN p_modificado_por VARCHAR(100)
+  IN p_salario_mensual DECIMAL(14,2)
   
 )
 MODIFIES SQL DATA
@@ -45,7 +43,7 @@ BEGIN ATOMIC
       Apellido_usuario=p_apellido,
       Salario_mensual_base=p_salario_mensual,
       modificado_en=CURRENT_TIMESTAMP,
-      modificado_por=p_modificado_por
+      modificado_por='royum'
   WHERE Id_usuario=p_id_usuario;
 END;
 
@@ -148,7 +146,7 @@ BEGIN atomic
 		UPDATE USUARIOS
 		SET Estado_usuario=TRUE,
 		modificado_en=current_timestamp,
-		modificado_por=p_modificado_por
+		modificado_por='royum'
 		WHERE Id_usuario=p_id_usuario;
 	ELSE
 		SIGNAL SQLSTATE '45000'
