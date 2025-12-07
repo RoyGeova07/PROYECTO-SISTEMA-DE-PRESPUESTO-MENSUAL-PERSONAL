@@ -1777,6 +1777,36 @@ public class Puente_Sql_Java
                 return BigDecimal.ZERO;
             }
         }
-    }    
+    }
+    public Usuario BuscarUsuarioPorNombreYCorreo(String nombre,String Correo)throws SQLException
+    {
+        
+        String SQL="select * from USUARIOS "
+                + "where NOMBRE_USUARIO=? "
+                + " and CORREO_ELECTRONICO=? "
+                + " and ESTADO_USUARIO=true";
+        
+        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
+        {
+
+            ps.setString(1, nombre);
+            ps.setString(2, Correo);
+
+            try(ResultSet rs=ps.executeQuery()) 
+            {
+                if(rs.next()) 
+                {
+                    
+                    return MapearUsuario(rs);
+                    
+                }else{
+                    
+                    return null;
+                    
+                }
+            }
+        }
+        
+    }
 
 }
