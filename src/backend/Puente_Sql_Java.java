@@ -40,24 +40,33 @@ public class Puente_Sql_Java
         }
         
     }
-    public void Actualizar_usuario(long idUsuario,String nombre,String apellido,BigDecimal salario)throws SQLException
-    {
-        
-        String SQL="{ CALL sp_actualizar_usuario(?,?,?,?)}";
-        
-        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
-        {
-            
-            cs.setLong(1, idUsuario);
-            cs.setString(2, nombre);
-            cs.setString(3, apellido);
+    public void Actualizar_usuario(long idUsuario,
+                               String nombre,
+                               String apellido,
+                               BigDecimal salario,
+                               String modificadoPor) throws SQLException
+{
+    String SQL = "{ CALL PUBLIC.sp_actualizar_usuario(?,?,?,?,?) }";
+
+    try (Connection con = ConexionBD.getConnection();
+         CallableStatement cs = con.prepareCall(SQL)) {
+
+        cs.setLong(1, idUsuario);
+        cs.setString(2, nombre);
+        cs.setString(3, apellido);
+
+        if (salario != null) {
             cs.setBigDecimal(4, salario);
-            
-            cs.executeUpdate();
-            
+        } else {
+            cs.setNull(4, java.sql.Types.DECIMAL);
         }
-        
+
+        cs.setString(5, modificadoPor); // p_modificado_por
+
+        cs.execute(); // o executeUpdate();
     }
+}
+
     public boolean Eliminar_usuario(long idUsuario)throws SQLException
     {
         

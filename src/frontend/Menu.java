@@ -4,12 +4,15 @@
  */
 package frontend;
 
+import java.sql.Types;
 import backend.Usuario;
 import java.awt.*;
 import java.text.NumberFormat;
 import java.util.Locale;
 import javax.swing.*;
-
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import backend.Puente_Sql_Java;
 /**
  *
  * @author royum
@@ -336,14 +339,12 @@ public class Menu extends JFrame
         headerInfo.setOpaque(false);
         JLabel lblInfo = new JLabel("Información Personal");
         lblInfo.setFont(new Font("Segoe UI", Font.BOLD, 15));
+
         JButton btnEditar = new JButton("Editar Perfil");
         btnEditar.setBorderPainted(false);
         btnEditar.setContentAreaFilled(false);
         btnEditar.setForeground(new Color(130, 88, 255));
         btnEditar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnEditar.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de edición de perfil pendiente de implementar.",
-                "Info", JOptionPane.INFORMATION_MESSAGE));
 
         headerInfo.add(lblInfo, BorderLayout.WEST);
         headerInfo.add(btnEditar, BorderLayout.EAST);
@@ -351,7 +352,7 @@ public class Menu extends JFrame
         infoPersonal.add(headerInfo);
         infoPersonal.add(Box.createVerticalStrut(10));
 
-        // 🔹 Panel que centra los campos
+// 🔹 Panel que centra los campos (LO MISMO QUE YA TENÍAS)
         JPanel panelCampos = new JPanel();
         panelCampos.setOpaque(false);
         panelCampos.setLayout(new BoxLayout(panelCampos, BoxLayout.Y_AXIS));
@@ -359,32 +360,17 @@ public class Menu extends JFrame
         panelCampos.setMaximumSize(new Dimension(800, Integer.MAX_VALUE)); // ancho máximo
         panelCampos.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-        // Fila Nombre / Apellido
-        JPanel fila1 = new JPanel(new GridLayout(1, 2, 15, 0));
-        fila1.setOpaque(false);
-        fila1.setAlignmentX(Component.CENTER_ALIGNMENT);
-        fila1.add(crearCampoInfo("Nombre", usuario.getNombre()));
-        fila1.add(crearCampoInfo("Apellido", usuario.getApellido()));
-
-        panelCampos.add(fila1);
-        panelCampos.add(Box.createVerticalStrut(10));
-
-        // Correo ancho completo dentro de panelCampos
-        JPanel panelCorreo = crearCampoInfo("Correo Electrónico", usuario.getCorreo());
-        panelCorreo.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panelCampos.add(panelCorreo);
-        panelCampos.add(Box.createVerticalStrut(10));
-
-        // Salario ancho completo dentro de panelCampos
-        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("es", "HN"));
-        String salarioTxt = usuario.getSalario() != null ? nf.format(usuario.getSalario()) : "L. 0.00";
-        JPanel panelSalario = crearCampoInfo("Salario Mensual", salarioTxt);
-        panelSalario.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panelCampos.add(panelSalario);
+// Vista inicial: SOLO LECTURA (igual que antes)
+        construirCamposSoloLecturaPerfil(panelCampos, usuario);
 
         infoPersonal.add(panelCampos);
         perfil.add(infoPersonal);
         perfil.add(Box.createVerticalStrut(15));
+
+// 🔸 Acción del botón Editar: pasa a modo edición manteniendo centrado
+        btnEditar.addActionListener(e -> {
+            construirCamposEdicionPerfil(panelCampos, infoPersonal, usuario);
+        });
 
         // --- Estadísticas de uso ---
         JPanel estadisticas = new JPanel();
@@ -488,6 +474,204 @@ public class Menu extends JFrame
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, pref.height));
 
         return panel;
+    }
+
+    // Campo editable con etiqueta arriba
+    private JPanel crearCampoEditable(String etiqueta, JTextField campo) {
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel lblEt = new JLabel(etiqueta);
+        lblEt.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblEt.setForeground(new Color(120, 120, 120));
+
+        campo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        campo.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        campo.setPreferredSize(new Dimension(200, 32));
+        campo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        campo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panel.add(lblEt);
+        panel.add(Box.createVerticalStrut(4));
+        panel.add(campo);
+
+        return panel;
+    }
+
+    private void construirCamposSoloLecturaPerfil(JPanel panelCampos, Usuario usuario) {
+        panelCampos.removeAll();
+
+        // Fila Nombre / Apellido
+        JPanel fila1 = new JPanel(new GridLayout(1, 2, 15, 0));
+        fila1.setOpaque(false);
+        fila1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fila1.add(crearCampoInfo("Nombre", usuario.getNombre()));
+        fila1.add(crearCampoInfo("Apellido", usuario.getApellido()));
+
+        panelCampos.add(fila1);
+        panelCampos.add(Box.createVerticalStrut(10));
+
+        // Correo
+        JPanel panelCorreo = crearCampoInfo("Correo Electrónico", usuario.getCorreo());
+        panelCorreo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCampos.add(panelCorreo);
+        panelCampos.add(Box.createVerticalStrut(10));
+
+        // Salario
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("es", "HN"));
+        String salarioTxt = usuario.getSalario() != null
+                ? nf.format(usuario.getSalario())
+                : "L. 0.00";
+        JPanel panelSalario = crearCampoInfo("Salario Mensual", salarioTxt);
+        panelSalario.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCampos.add(panelSalario);
+
+        panelCampos.revalidate();
+        panelCampos.repaint();
+    }
+
+    private void construirCamposEdicionPerfil(JPanel panelCampos, JPanel infoPersonal, Usuario usuario) {
+        panelCampos.removeAll();
+
+        // Campos editables
+        JTextField txtNombre = new JTextField(usuario.getNombre());
+        JTextField txtApellido = new JTextField(usuario.getApellido());
+        JTextField txtCorreo = new JTextField(usuario.getCorreo());
+        txtCorreo.setEditable(false);
+
+        String salarioPlano = usuario.getSalario() != null
+                ? usuario.getSalario().toPlainString()
+                : "";
+        JTextField txtSalario = new JTextField(salarioPlano);
+
+        // Fila Nombre / Apellido (centrada)
+        JPanel campoNombre = crearCampoEditable("Nombre", txtNombre);
+        JPanel campoApellido = crearCampoEditable("Apellido", txtApellido);
+        campoNombre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        campoApellido.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel fila1 = new JPanel(new GridLayout(1, 2, 15, 0));
+        fila1.setOpaque(false);
+        fila1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fila1.add(campoNombre);
+        fila1.add(campoApellido);
+        panelCampos.add(fila1);
+        panelCampos.add(Box.createVerticalStrut(10));
+
+        // Correo
+        JPanel campoCorreo = crearCampoEditable("Correo Electrónico", txtCorreo);
+        campoCorreo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCampos.add(campoCorreo);
+
+        JLabel lblNotaCorreo = new JLabel("El correo electrónico no se puede modificar");
+        lblNotaCorreo.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblNotaCorreo.setForeground(new Color(150, 150, 150));
+        lblNotaCorreo.setBorder(BorderFactory.createEmptyBorder(4, 2, 0, 0));
+        lblNotaCorreo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCampos.add(lblNotaCorreo);
+        panelCampos.add(Box.createVerticalStrut(10));
+
+        // Salario
+        JPanel campoSalario = crearCampoEditable("Salario Mensual", txtSalario);
+        campoSalario.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelCampos.add(campoSalario);
+        panelCampos.add(Box.createVerticalStrut(20));
+
+        // Botones (centrados)
+        JPanel botones = new JPanel(new GridLayout(1, 2, 15, 0));
+        botones.setOpaque(false);
+        botones.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setBackground(Color.WHITE);
+        btnCancelar.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        btnCancelar.setFocusPainted(false);
+
+        JButton btnGuardar = new JButton("Guardar Cambios");
+        btnGuardar.setBackground(new Color(130, 88, 255));
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnGuardar.setOpaque(true);
+        btnGuardar.setContentAreaFilled(true);
+        btnGuardar.setBorderPainted(false);
+        btnGuardar.setFocusPainted(false);
+btnGuardar.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+btnGuardar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+
+        botones.add(btnCancelar);
+        botones.add(btnGuardar);
+        panelCampos.add(botones);
+
+        panelCampos.revalidate();
+        panelCampos.repaint();
+
+        // === LÓGICA GUARDAR ===
+        btnGuardar.addActionListener(ev -> {
+            try {
+                String nombre = txtNombre.getText().trim();
+                String apellido = txtApellido.getText().trim();
+                String salarioStr = txtSalario.getText().trim();
+
+                if (nombre.isEmpty() || apellido.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Los campos de nombre y apellido no pueden estar vacíos.");
+                    return;
+                }
+
+                BigDecimal salario;
+                try {
+                    salario = new BigDecimal(salarioStr);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "El salario debe ser un número válido.",
+                            "Dato inválido", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                Puente_Sql_Java puente = new Puente_Sql_Java();
+                puente.Actualizar_usuario(
+        usuario.getId(),
+        nombre,
+        apellido,
+        salario,
+        usuario.getCorreo()   // <- p_modificado_por
+);
+
+
+                // Actualizar objeto en memoria
+                usuario.setNombre(nombre);
+                usuario.setApellido(apellido);
+                usuario.setSalario(salario);
+
+                JOptionPane.showMessageDialog(this,
+                        "Perfil actualizado correctamente.",
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+                // Recargar toda la UI para refrescar header, sidebar y perfil
+                getContentPane().removeAll();
+                initUI();
+                revalidate();
+                repaint();
+
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Error al actualizar el perfil:\n" + ex.getMessage(),
+                        "Error BD", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Error inesperado:\n" + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // === LÓGICA CANCELAR: volver a vista solo lectura ===
+        btnCancelar.addActionListener(ev -> {
+            construirCamposSoloLecturaPerfil(panelCampos, usuario);
+            infoPersonal.revalidate();
+            infoPersonal.repaint();
+        });
     }
 
     private JPanel crearStatCard(String titulo, String valor) {
