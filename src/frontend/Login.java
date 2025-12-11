@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 import java.sql.SQLException;
+import backend.Puente_Sql_Java;
 
 /**
  *
@@ -191,23 +192,21 @@ public class Login extends JFrame
     }
 
     private void onLogin(ActionEvent e) {
-        String nombre = txtNombre.getText().trim();
-        String correo = txtCorreo.getText().trim();
+    String nombre = txtNombre.getText().trim();
+    String correo = txtCorreo.getText().trim();
 
-        if (nombre.isEmpty() || correo.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Debes ingresar tu nombre de usuario y correo electrónico.",
-                    "Validación",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+    if (nombre.isEmpty() || correo.isEmpty()) {
+        JOptionPane.showMessageDialog(this,
+                "Debes ingresar tu nombre de usuario y correo electrónico.",
+                "Validación",
+                JOptionPane.WARNING_MESSAGE);
+        return;
+    }
 
         try {
-            // Consultar en la BD si existe el usuario
-            backend.Usuario u=p.BuscarUsuarioPorNombreYCorreo(nombre, correo);
+            backend.Usuario u = p.BuscarUsuarioPorNombreYCorreo(nombre, correo);
 
             if (u == null) {
-                // No existe -> mensaje de error
                 JOptionPane.showMessageDialog(this,
                         "Usuario o correo incorrectos",
                         "Error de inicio de sesión",
@@ -215,21 +214,32 @@ public class Login extends JFrame
                 return;
             }
 
-            
+// 🔹 Reactivar siempre que el login sea correcto
+            try {
+                p.ReactivarUsuario(u.getId(), u.getCorreo());
+            } catch (SQLException exReac) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo reactivar la cuenta automáticamente:\n" + exReac.getMessage(),
+                        "Aviso", JOptionPane.WARNING_MESSAGE);
+            }
+
             JOptionPane.showMessageDialog(this,
                     "Bienvenido, " + u.getNombre() + ".",
                     "Inicio de sesión exitoso",
                     JOptionPane.INFORMATION_MESSAGE);
 
             abrirMenuPrincipal(u);
+            dispose();
 
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this,
                     "Ocurrió un error al conectarse a la base de datos:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+                    "Error de inicio de sesión",
+                JOptionPane.ERROR_MESSAGE);
     }
+}
+
+
 
     private void abrirRegistro() {
         dispose();

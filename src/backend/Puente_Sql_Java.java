@@ -171,36 +171,33 @@ public class Puente_Sql_Java
         }
         
     }
-    public boolean ReactivarUsuario(long idUsuario)throws SQLException
-    {
-        
-        String SQL="{ CALL sp_reactivar_usuario(?) }";
-        
-        
-        try(Connection con=ConexionBD.getConnection();CallableStatement cs=con.prepareCall(SQL))
-        {
-            
-            cs.setLong(1, idUsuario);
-            
-            cs.execute();
-            
-            return true;
-            
-        }catch(SQLException ex){
-            
-            if("45000".equals(ex.getSQLState())) 
-            {
+    public boolean ReactivarUsuario(long idUsuario, String modificadoPor) throws SQLException
+{
+    String SQL = "{ CALL PUBLIC.sp_reactivar_usuario(?,?) }";
 
-                System.err.println("ERROR BD controlado: SQLState=" + ex.getSQLState() + " Mensaje=" + ex.getMessage());
-                throw ex;
-            }
-            ex.printStackTrace();
+    try (Connection con = ConexionBD.getConnection();
+         CallableStatement cs = con.prepareCall(SQL)) {
+
+        cs.setLong(1, idUsuario);
+        cs.setString(2, modificadoPor); // segundo parámetro del SP
+
+        cs.execute();
+        return true;
+
+    } catch (SQLException ex) {
+
+        if ("45000".equals(ex.getSQLState())) {
+            System.err.println("ERROR BD controlado: SQLState=" + ex.getSQLState()
+                    + " Mensaje=" + ex.getMessage());
             throw ex;
-            
         }
-        
- 
+
+        ex.printStackTrace();
+        throw ex;
     }
+}
+
+
     public void InsertarCategoria(String nombre,String descripcion,String tipo,Long idUsuario)throws SQLException
     {
         
@@ -1788,34 +1785,30 @@ public class Puente_Sql_Java
         }
     }
     public Usuario BuscarUsuarioPorNombreYCorreo(String nombre,String Correo)throws SQLException
+{
+    String SQL="select * from USUARIOS "
+            + "where NOMBRE_USUARIO=? "
+            + " and CORREO_ELECTRONICO=?";   // 👈 QUITAMOS ESTADO_USUARIO=true
+
+    try(Connection con=ConexionBD.getConnection();
+        PreparedStatement ps=con.prepareStatement(SQL))
     {
-        
-        String SQL="select * from USUARIOS "
-                + "where NOMBRE_USUARIO=? "
-                + " and CORREO_ELECTRONICO=? "
-                + " and ESTADO_USUARIO=true";
-        
-        try(Connection con=ConexionBD.getConnection();PreparedStatement ps=con.prepareStatement(SQL)) 
+        ps.setString(1, nombre);
+        ps.setString(2, Correo);
+
+        try(ResultSet rs=ps.executeQuery())
         {
-
-            ps.setString(1, nombre);
-            ps.setString(2, Correo);
-
-            try(ResultSet rs=ps.executeQuery()) 
+            if(rs.next())
             {
-                if(rs.next()) 
-                {
-                    
-                    return MapearUsuario(rs);
-                    
-                }else{
-                    
-                    return null;
-                    
-                }
+                return MapearUsuario(rs);   // como ya lo tienes
+            }
+            else
+            {
+                return null;
             }
         }
-        
     }
+}
+
 
 }

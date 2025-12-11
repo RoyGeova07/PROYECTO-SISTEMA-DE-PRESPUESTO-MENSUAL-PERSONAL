@@ -440,9 +440,60 @@ public class Menu extends JFrame
         btnDesactivar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnDesactivar.setHorizontalAlignment(SwingConstants.CENTER);
         btnDesactivar.setPreferredSize(new Dimension(260, 40));
-        btnDesactivar.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "La opción de desactivar cuenta se implementará con el procedimiento sp_eliminar_usuario.",
-                "Pendiente", JOptionPane.INFORMATION_MESSAGE));
+        btnDesactivar.addActionListener(e -> {
+            int r = JOptionPane.showConfirmDialog(
+                    this,
+                    "¿Estás seguro de que deseas desactivar tu cuenta?\n"
+                    + "Podrás reactivarla más adelante con ayuda del sistema.",
+                    "Desactivar cuenta",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (r == JOptionPane.YES_OPTION) {
+                try {
+                    Puente_Sql_Java puente = new Puente_Sql_Java();
+
+                    boolean ok = puente.Eliminar_usuario(usuario.getId());
+
+                    if (ok) {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Tu cuenta ha sido desactivada correctamente.\n"
+                                + "Se cerrará la sesión.",
+                                "Cuenta desactivada",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+
+                        // Cerrar esta ventana y regresar al login
+                        this.dispose();
+                        new Login().setVisible(true);
+                    } else {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "No se pudo desactivar la cuenta. Intenta nuevamente.",
+                                "Error BD",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+
+                } catch (java.sql.SQLException ex) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Error al desactivar la cuenta:\n" + ex.getMessage(),
+                            "Error BD",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Error inesperado:\n" + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        });
 
         wrapDesactivar.add(btnDesactivar);
         gestion.add(wrapDesactivar);
